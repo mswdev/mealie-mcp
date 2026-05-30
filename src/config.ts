@@ -20,6 +20,8 @@ export type Config = z.infer<typeof configSchema>;
 /**
  * Validates and returns the server configuration from environment variables.
  * Exits the process with a descriptive error if required variables are missing.
+ *
+ * @returns The validated Config object; the process exits before returning if validation fails
  */
 export function loadConfig(): Config {
   const result = configSchema.safeParse(process.env);

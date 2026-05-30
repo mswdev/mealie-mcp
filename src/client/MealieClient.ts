@@ -1,5 +1,6 @@
 import { logger } from "../logger.js";
 import type { paths } from "../types/mealie.js";
+import { MealieApiError } from "./MealieApiError.js";
 
 /** The response shape from GET /api/app/about */
 export type AppAbout =
@@ -51,21 +52,10 @@ export class MealieClient {
   /**
    * Returns information about the connected Mealie instance.
    *
+   * @returns The connected Mealie instance's about info (version, config, feature flags)
    * @see GET /api/app/about
    */
   async getAbout(): Promise<AppAbout> {
     return this.get<AppAbout>("/api/app/about");
-  }
-}
-
-/** Thrown when the Mealie API responds with a non-2xx status code. */
-export class MealieApiError extends Error {
-  constructor(
-    readonly statusCode: number,
-    readonly statusText: string,
-    readonly path: string,
-  ) {
-    super(`Mealie API error ${statusCode} (${statusText}) at ${path}`);
-    this.name = "MealieApiError";
   }
 }
