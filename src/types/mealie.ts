@@ -1,3 +1,9 @@
+/**
+ * AUTO-GENERATED from Mealie's OpenAPI spec by `npm run generate`.
+ * Do not edit by hand — changes will be overwritten on the next generation.
+ * @see scripts/generate-types.ts
+ */
+
 export interface paths {
     "/api/app/about": {
         parameters: {
