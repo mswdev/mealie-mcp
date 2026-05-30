@@ -21,7 +21,7 @@ Names should be **descriptive and unambiguous**. A reader should never have to l
 - **Booleans**: prefix with `is`, `has`, `can`, `should` (`isEligible`, `hasAccess`)
 - **Collections**: pluralize (`users`, `activeOrders`, `pendingItems`)
 - **Constants**: UPPER_SNAKE_CASE (`ALGORITHM`, `KEY_LENGTH`, `MAX_RETRY_COUNT`)
-- **Files**: PascalCase for classes (`UserService.tsx`), camelCase for utils (`format-date.ts`)
+- **Files**: PascalCase for classes (`UserService.tsx`), kebab-case for utils (`format-date.ts`)
 
 ## General Rules
 
@@ -36,9 +36,11 @@ All code must include clear, human-readable documentation. Comments should be wr
 
 **JSDoc/TSDoc is required on all exported functions, methods, classes, and interfaces.** IDEs parse these for tooltips and autocomplete, and they support future automated API documentation generation (TypeDoc, API Extractor, etc.).
 
-**Required JSDoc tags:**
+**JSDoc tags — always required:**
 - `@param` — every parameter with its purpose and constraints
-- `@returns` — what the function returns and under what conditions
+- `@returns` — what the function returns and under what conditions. Omit only for synchronous `void` functions; for `Promise`-returning functions, document what the promise resolves to.
+
+**JSDoc tags — required when applicable:**
 - `@throws` — any exceptions the function may throw
 - `@example` — usage example for non-trivial functions
 - `@see` — cross-reference related functions or docs

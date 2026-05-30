@@ -1,8 +1,8 @@
 # mealie-mcp
 
-A full-featured MCP (Model Context Protocol) server for [Mealie](https://mealie.io) — the self-hosted recipe manager. Connect any MCP-compatible AI assistant to your Mealie instance.
+An MCP (Model Context Protocol) server for [Mealie](https://mealie.io) — the self-hosted recipe manager. Connect any MCP-compatible AI assistant to your Mealie instance.
 
-> **Why this one?** Other Mealie MCPs cover a handful of endpoints. This one targets the full Mealie REST API.
+> **Status: early scaffold.** Today the server ships a single `get_about` tool plus the framework to grow. The goal is full coverage of the Mealie REST API — other Mealie MCPs stall at a handful of endpoints, and this one is built to go the distance.
 
 ## Installation
 
@@ -46,7 +46,16 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 
 ### Claude Code
 
-Add to `.claude/settings.json` in your project, or `~/.claude/settings.json` globally:
+Add the server with the CLI (stored in your user config):
+
+```bash
+claude mcp add mealie \
+  --env MEALIE_URL=https://your-mealie-instance.com \
+  --env MEALIE_API_TOKEN=your-token-here \
+  -- npx -y mealie-mcp
+```
+
+Or, to share it with a project via version control, create a `.mcp.json` file in the project root:
 
 ```json
 {
@@ -93,6 +102,8 @@ MEALIE_API_TOKEN=your-token-here \
 npx mealie-mcp
 ```
 
+Then point the connector at `http://<your-host>:3000/mcp` — the server serves MCP only on the `/mcp` path (POST).
+
 > **⚠️ Security:** HTTP mode binds to `0.0.0.0` and is **unauthenticated** — anyone who can reach the port can invoke tools using your Mealie token. Run it only on a trusted network and **behind an authenticating reverse proxy** (or a tunnel that enforces auth). Inbound authentication and host allow-listing are planned for a future release. For local single-user setups, prefer the default `stdio` transport.
 
 ## Development
@@ -111,7 +122,10 @@ npm test
 # Build
 npm run build
 
-# Run locally
+# Run locally (build first, then start the server)
+MEALIE_URL=https://your-mealie.com MEALIE_API_TOKEN=your-token npm start
+
+# Or watch + rebuild + auto-restart while developing
 MEALIE_URL=https://your-mealie.com MEALIE_API_TOKEN=your-token npm run dev
 ```
 
