@@ -13,10 +13,7 @@ const SERVER_VERSION = "0.1.0";
  * @returns A fully configured McpServer ready to connect to a transport
  */
 export function createServer(client: MealieClient): McpServer {
-  const server = new McpServer(
-    { name: SERVER_NAME, version: SERVER_VERSION },
-    { capabilities: { logging: {} } },
-  );
+  const server = new McpServer({ name: SERVER_NAME, version: SERVER_VERSION });
 
   registerAboutTools(server, client);
 

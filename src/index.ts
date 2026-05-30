@@ -8,7 +8,11 @@ import { loadConfig } from "./config.js";
 import { logger } from "./logger.js";
 import { createServer } from "./server.js";
 
-/** Bind address for HTTP transport; "0.0.0.0" disables localhost-only DNS rebinding protection. */
+/**
+ * HTTP transport listen address. Passed both to `app.listen` (the actual bind) and to
+ * `createMcpExpressApp`, where it selects DNS-rebinding protection: "0.0.0.0" binds all
+ * interfaces and, per the SDK, disables the localhost-only DNS-rebinding guard.
+ */
 const HTTP_HOST = "0.0.0.0";
 /** HTTP status for an unsupported HTTP method on the /mcp endpoint. */
 const HTTP_METHOD_NOT_ALLOWED = 405;
@@ -49,8 +53,8 @@ async function startHttp(): Promise<void> {
   app.get("/mcp", respondMethodNotAllowed);
   app.delete("/mcp", respondMethodNotAllowed);
 
-  app.listen(config.PORT, () => {
-    logger.info({ port: config.PORT }, "mealie-mcp running on HTTP");
+  app.listen(config.PORT, HTTP_HOST, () => {
+    logger.info({ port: config.PORT, host: HTTP_HOST }, "mealie-mcp running on HTTP");
   });
 }
 
@@ -73,9 +77,11 @@ async function handleMcpPost(req: Request, res: Response): Promise<void> {
   // so transport.handleRequest()/close() remain typed below.
   await server.connect(transport as Transport);
 
+  // server.close() cascades to transport.close() (Protocol.close awaits the transport),
+  // so closing the server is sufficient. Catch the async rejection to avoid an
+  // unhandled rejection crashing the process if teardown fails mid-request.
   res.on("close", () => {
-    transport.close();
-    server.close();
+    server.close().catch((err) => logger.error({ err }, "error closing MCP server"));
   });
 
   await transport.handleRequest(req, res, req.body);
