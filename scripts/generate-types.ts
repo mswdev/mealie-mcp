@@ -13,15 +13,24 @@ const GENERATED_BANNER = `/**
  * @see scripts/generate-types.ts
  */`;
 
-const specUrl =
-  (process.env.MEALIE_SPEC_URL ?? process.env.MEALIE_URL)
-    ? `${process.env.MEALIE_SPEC_URL ?? process.env.MEALIE_URL}/openapi.json`
-    : "https://demo.mealie.io/openapi.json";
+/** Public Mealie demo instance used when no spec URL is configured. */
+const DEFAULT_SPEC_URL = "https://demo.mealie.io/openapi.json";
+/** Only these URL schemes are allowed for fetching the spec. */
+const ALLOWED_PROTOCOLS = ["http:", "https:"];
+
+// Use `||` (not `??`) so an empty-string env var (common in CI) is treated as unset.
+const specBase = process.env.MEALIE_SPEC_URL || process.env.MEALIE_URL;
+const specUrl = specBase ? `${specBase}/openapi.json` : DEFAULT_SPEC_URL;
 
 async function main(): Promise<void> {
   process.stdout.write(`Generating types from: ${specUrl}\n`);
 
-  const ast = await openapiTS(new URL(specUrl));
+  const url = new URL(specUrl);
+  if (!ALLOWED_PROTOCOLS.includes(url.protocol)) {
+    throw new Error(`Refusing to fetch spec from a non-http(s) URL: ${specUrl}`);
+  }
+
+  const ast = await openapiTS(url);
   const contents = astToString(ast);
 
   await fs.mkdir(path.dirname(OUT_FILE), { recursive: true });
