@@ -1,7 +1,7 @@
 {
   "name": "mealie-mcp",
   "version": "0.1.0",
-  "description": "A full-featured MCP server for the Mealie recipe manager",
+  "description": "An MCP server for the Mealie recipe manager (early scaffold; aims for full Mealie REST API coverage)",
   "type": "module",
   "bin": {
     "mealie-mcp": "./dist/index.js"
@@ -9,16 +9,18 @@
   "files": ["dist"],
   "scripts": {
     "build": "tsup",
-    "dev": "tsup --watch",
+    "dev": "tsup --watch --onSuccess \"node dist/index.js\"",
+    "start": "node dist/index.js",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "biome check .",
     "format": "biome format --write .",
     "generate": "tsx scripts/generate-types.ts",
+    "prepare": "npm run build",
     "prepublishOnly": "npm run build && npm run test && npm run lint"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   },
   "keywords": ["mealie", "mcp", "model-context-protocol", "recipe-manager", "meal-planning"],
   "author": "Matt White <matt@msw.dev>",
