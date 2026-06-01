@@ -31,6 +31,8 @@ describe("recipeGetHandler", () => {
     const body = parse(result);
     expect(body.id).toBe("uuid-1");
     expect(body.slug).toBe("soup");
+    expect(body.name).toBe("Soup");
+    expect(body.description).toBe("Tasty");
     expect(body.recipeIngredient).toBeUndefined();
     expect(body.nutrition).toBeUndefined();
     expect(body.comments).toBeUndefined();
@@ -48,15 +50,17 @@ describe("recipeGetHandler", () => {
     expect(body.recipeIngredient).toBeUndefined();
   });
 
-  it("detailed returns the full object", async () => {
+  it("detailed returns the full object and ignores include", async () => {
     const result = await recipeGetHandler(fakeClient(FULL), {
       slug: "soup",
       response_format: "detailed",
+      include: ["nutrition"],
     });
 
     const body = parse(result);
     expect(body.recipeIngredient).toEqual([{ note: "salt" }]);
     expect(body.recipeInstructions).toEqual([{ text: "boil" }]);
+    expect(body.notes).toEqual([{ title: "n" }]);
   });
 
   it("returns isError when the client throws", async () => {

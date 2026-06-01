@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { MealieApiError } from "../../client/MealieApiError.js";
 import type { PaginatedResult } from "../../client/pagination.js";
 import { recipeSearchHandler } from "./recipe-search.js";
 
@@ -43,16 +44,25 @@ describe("recipeSearchHandler", () => {
     expect(body.items).toEqual([{ id: "u1", slug: "soup", name: "Soup" }]);
   });
 
-  it("returns isError when the client throws", async () => {
+  it("applies the default perPage when omitted", async () => {
+    const captured: Captured = { path: "", query: undefined };
+    const client = fakeClient({ items: [], total: 0, page: 1, perPage: 20, totalPages: 0 }, captured);
+
+    await recipeSearchHandler(client, {});
+
+    expect(captured.query).toMatchObject({ perPage: 20 });
+  });
+
+  it("returns isError carrying the Mealie API error message", async () => {
     const client = {
       getPaginated: async <T>(): Promise<PaginatedResult<T>> => {
-        throw new Error("boom");
+        throw new MealieApiError(401, "Unauthorized", "/api/recipes");
       },
     };
 
     const result = await recipeSearchHandler(client, {});
 
     expect(result.isError).toBe(true);
-    expect((result.content[0] as { text: string }).text).toContain("boom");
+    expect((result.content[0] as { text: string }).text).toContain("401");
   });
 });
