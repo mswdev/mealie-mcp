@@ -1,5 +1,6 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { MealieClient } from "../../client/MealieClient.js";
+import { registerBatchReadTools, registerBatchWriteTools } from "./batch/index.js";
 import { registerCoreReadTools, registerCoreWriteTools } from "./core/index.js";
 import { registerImagesReadTools, registerImagesWriteTools } from "./images/index.js";
 import { registerImportReadTools, registerImportWriteTools } from "./import/index.js";
@@ -23,9 +24,11 @@ export function registerRecipeTools(
   registerCoreReadTools(server, client);
   registerImportReadTools(server, client);
   registerImagesReadTools(server, client);
+  registerBatchReadTools(server, client);
 
   if (options.readOnly) return;
   registerCoreWriteTools(server, client);
   registerImportWriteTools(server, client);
   registerImagesWriteTools(server, client);
+  registerBatchWriteTools(server, client);
 }
