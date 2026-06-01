@@ -34,7 +34,7 @@ if (config.TRANSPORT === "stdio") {
  * @returns A promise that resolves once the server is connected to stdio
  */
 async function startStdio(): Promise<void> {
-  const server = createServer(client);
+  const server = createServer(client, { readOnly: config.MEALIE_READ_ONLY });
   const transport = new StdioServerTransport();
   await server.connect(transport);
   logger.info("mealie-mcp running on stdio");
@@ -68,7 +68,7 @@ async function startHttp(): Promise<void> {
  * @returns A promise that resolves once the request has been handled
  */
 async function handleMcpPost(req: Request, res: Response): Promise<void> {
-  const server = createServer(client);
+  const server = createServer(client, { readOnly: config.MEALIE_READ_ONLY });
   // Stateless mode: omit sessionIdGenerator so the transport does not track sessions.
   const transport = new StreamableHTTPServerTransport({});
   // SDK v1.29.0: StreamableHTTPServerTransport implements Transport, but its optional

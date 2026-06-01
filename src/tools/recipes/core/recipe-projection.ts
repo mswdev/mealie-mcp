@@ -1,4 +1,4 @@
-import type { components } from "../../types/mealie.js";
+import type { components } from "../../../types/mealie.js";
 
 /** The full recipe object returned by Mealie's recipe read/write endpoints. */
 export type RecipeDetail = components["schemas"]["Recipe-Output"];

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { MealieApiError } from "../../client/MealieApiError.js";
-import type { PaginatedResult } from "../../client/pagination.js";
+import { MealieApiError } from "../../../client/MealieApiError.js";
+import type { PaginatedResult } from "../../../client/pagination.js";
 import { recipeSearchHandler } from "./recipe-search.js";
 
 type Captured = { path: string; query: unknown };
