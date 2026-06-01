@@ -2,9 +2,8 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import * as z from "zod";
 import type { MealieClient } from "../../client/MealieClient.js";
-import { logger } from "../../logger.js";
 import type { components } from "../../types/mealie.js";
-import { JSON_INDENT } from "../format.js";
+import { errorResult, jsonResult } from "../result.js";
 
 type RecipeDetail = components["schemas"]["Recipe-Output"];
 type Includable = "comments" | "nutrition";
@@ -62,16 +61,9 @@ export async function recipeGetHandler(client: GetClient, args: GetArgs): Promis
   try {
     const recipe = await client.get<RecipeDetail>(`/api/recipes/${args.slug}`);
     const projected = project(recipe, args.response_format ?? "concise", args.include ?? []);
-    return {
-      content: [{ type: "text", text: JSON.stringify(projected, null, JSON_INDENT) }],
-    };
+    return jsonResult(projected);
   } catch (error) {
-    logger.error({ err: error }, "recipe_get failed");
-    const message = error instanceof Error ? error.message : String(error);
-    return {
-      content: [{ type: "text", text: `Failed to get recipe: ${message}` }],
-      isError: true,
-    };
+    return errorResult(error, "recipe_get", "Failed to get recipe");
   }
 }
 
