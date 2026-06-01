@@ -3,7 +3,7 @@ import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import * as z from "zod";
 import type { MealieClient } from "../../../client/MealieClient.js";
 import { errorResult, jsonResult } from "../../result.js";
-import { type Includable, type RecipeDetail, projectRecipe } from "./recipe-projection.js";
+import { type Includable, type RecipeDetail, projectRecipe } from "../recipe-projection.js";
 
 /** Minimal client surface the handler needs (eases test fakes). */
 type GetClient = Pick<MealieClient, "get">;

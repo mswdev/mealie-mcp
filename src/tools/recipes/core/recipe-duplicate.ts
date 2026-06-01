@@ -4,7 +4,7 @@ import * as z from "zod";
 import type { MealieClient } from "../../../client/MealieClient.js";
 import type { components } from "../../../types/mealie.js";
 import { errorResult, jsonResult } from "../../result.js";
-import { type RecipeDetail, projectRecipe } from "./recipe-projection.js";
+import { type RecipeDetail, projectRecipe } from "../recipe-projection.js";
 
 /** Minimal client surface the handler needs (eases test fakes). */
 type DuplicateClient = Pick<MealieClient, "post">;
