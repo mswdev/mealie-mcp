@@ -3,14 +3,14 @@ import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import * as z from "zod";
 import type { MealieClient } from "../../client/MealieClient.js";
 import type { PaginatedResult } from "../../client/pagination.js";
+import { logger } from "../../logger.js";
 import type { components } from "../../types/mealie.js";
+import { JSON_INDENT } from "../format.js";
 
 /** Default page size — modest, never unbounded (design §1.3). */
 const DEFAULT_PER_PAGE = 20;
 /** Maximum allowed page size to keep responses bounded (design §1.3). */
 const MAX_PER_PAGE = 100;
-/** Indentation width (in spaces) for JSON-formatted tool output. */
-const JSON_INDENT = 2;
 
 type RecipeSummary = components["schemas"]["RecipeSummary"];
 /** Minimal client surface the handler needs (eases test fakes). */
@@ -66,6 +66,7 @@ export async function recipeSearchHandler(
       content: [{ type: "text", text: JSON.stringify(toConcise(page), null, JSON_INDENT) }],
     };
   } catch (error) {
+    logger.error({ err: error }, "recipe_search failed");
     const message = error instanceof Error ? error.message : String(error);
     return {
       content: [{ type: "text", text: `Failed to search recipes: ${message}` }],

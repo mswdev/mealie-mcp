@@ -14,7 +14,7 @@ export type PaginatedResult<T> = {
 };
 
 /** Mealie's raw pagination envelope (snake_case, fields may be null). */
-type MealiePage<T> = {
+export type MealiePage<T> = {
   items: T[];
   total?: number | null;
   page?: number | null;

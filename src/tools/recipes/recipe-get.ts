@@ -2,10 +2,9 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import * as z from "zod";
 import type { MealieClient } from "../../client/MealieClient.js";
+import { logger } from "../../logger.js";
 import type { components } from "../../types/mealie.js";
-
-/** Indentation width (in spaces) for JSON-formatted tool output. */
-const JSON_INDENT = 2;
+import { JSON_INDENT } from "../format.js";
 
 type RecipeDetail = components["schemas"]["Recipe-Output"];
 type Includable = "comments" | "nutrition";
@@ -67,6 +66,7 @@ export async function recipeGetHandler(client: GetClient, args: GetArgs): Promis
       content: [{ type: "text", text: JSON.stringify(projected, null, JSON_INDENT) }],
     };
   } catch (error) {
+    logger.error({ err: error }, "recipe_get failed");
     const message = error instanceof Error ? error.message : String(error);
     return {
       content: [{ type: "text", text: `Failed to get recipe: ${message}` }],

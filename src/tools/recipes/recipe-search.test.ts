@@ -46,7 +46,10 @@ describe("recipeSearchHandler", () => {
 
   it("applies the default perPage when omitted", async () => {
     const captured: Captured = { path: "", query: undefined };
-    const client = fakeClient({ items: [], total: 0, page: 1, perPage: 20, totalPages: 0 }, captured);
+    const client = fakeClient(
+      { items: [], total: 0, page: 1, perPage: 20, totalPages: 0 },
+      captured,
+    );
 
     await recipeSearchHandler(client, {});
 

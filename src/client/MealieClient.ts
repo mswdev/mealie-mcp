@@ -2,7 +2,7 @@ import { logger } from "../logger.js";
 import type { paths } from "../types/mealie.js";
 import { MealieApiError } from "./MealieApiError.js";
 import { buildQueryString, normalizePagination } from "./pagination.js";
-import type { PaginatedResult, QueryParams } from "./pagination.js";
+import type { MealiePage, PaginatedResult, QueryParams } from "./pagination.js";
 
 /** The response shape from GET /api/app/about */
 export type AppAbout =
@@ -63,8 +63,8 @@ export class MealieClient {
    * @throws {MealieApiError} when the API returns a non-2xx status
    */
   async getPaginated<T>(path: string, query?: QueryParams): Promise<PaginatedResult<T>> {
-    const page = await this.get<{ items: T[] }>(path, query);
-    return normalizePagination(page as Parameters<typeof normalizePagination<T>>[0]);
+    const page = await this.get<MealiePage<T>>(path, query);
+    return normalizePagination(page);
   }
 
   /**
