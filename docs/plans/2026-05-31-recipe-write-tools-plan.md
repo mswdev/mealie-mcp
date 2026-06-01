@@ -87,6 +87,13 @@ describe("MealieClient write verbs", () => {
 
     await expect(client.put("/api/recipes/soup", {})).rejects.toBeInstanceOf(MealieApiError);
   });
+
+  it("tolerates an empty 200 body (returns undefined, does not throw)", async () => {
+    vi.stubGlobal("fetch", async () => new Response("", { status: 200 }));
+    const client = new MealieClient("https://m.test", "tok");
+
+    await expect(client.delete("/api/recipes/soup")).resolves.toBeUndefined();
+  });
 });
 ```
 
@@ -135,14 +142,30 @@ export class MealieClient {
       headers: this.#jsonHeaders(),
       body: JSON.stringify(body),
     });
-    if (!response.ok) throw new MealieApiError(response.status, response.statusText, path);
-    return response.json() as Promise<T>;
+    return this.#readJson<T>(response, path);
   }
 
   /** Builds the "?..." URL suffix from query params (empty when none usable). */
   #querySuffix(query: QueryParams): string {
     const queryString = buildQueryString(query);
     return queryString ? `?${queryString}` : "";
+  }
+
+  /**
+   * Validates the response and parses its JSON body, tolerating an empty body.
+   * Mealie's DELETE and several write endpoints return 200/204 with no content;
+   * response.json() would throw SyntaxError on the empty string, so read text
+   * first and only parse when non-empty.
+   *
+   * @param response - The fetch Response
+   * @param path - API path (for error context)
+   * @returns The parsed body, or undefined when the body is empty
+   * @throws {MealieApiError} when the API returns a non-2xx status
+   */
+  async #readJson<T>(response: Response, path: string): Promise<T> {
+    if (!response.ok) throw new MealieApiError(response.status, response.statusText, path);
+    const text = await response.text();
+    return (text ? JSON.parse(text) : undefined) as T;
   }
 
   async post<T>(path: string, body: unknown, query?: QueryParams): Promise<T> {
@@ -167,13 +190,12 @@ export class MealieClient {
     const url = `${this.#baseUrl}${path}${query ? this.#querySuffix(query) : ""}`;
     logger.debug({ url, method: "DELETE" }, "write request");
     const response = await fetch(url, { method: "DELETE", headers: this.#jsonHeaders() });
-    if (!response.ok) throw new MealieApiError(response.status, response.statusText, path);
-    return response.json() as Promise<T>;
+    return this.#readJson<T>(response, path);
   }
 }
 ```
 
-Refactor `get<T>` to use `this.#jsonHeaders()` and `this.#querySuffix(query)` (remove the old `#headers` field and inline query logic so there is one query-suffix code path). Re-run the **existing** `about`/`pagination`/recipe tests to confirm the refactor kept reads green.
+Refactor `get<T>` to use `this.#jsonHeaders()`, `this.#querySuffix(query)`, and `return this.#readJson<T>(response, path)` (remove the old `#headers` field and the inline `response.ok`/`response.json()` so there is one parse + one query-suffix code path). Re-run the **existing** `about`/`pagination`/recipe tests to confirm the refactor kept reads green.
 
 **Step 4: Run green.** `npx vitest run src/client/` → PASS.
 
@@ -250,8 +272,7 @@ describe("MealieClient.postMultipart", () => {
       headers: { Authorization: this.#authHeader, Accept: "application/json" },
       body: formData,
     });
-    if (!response.ok) throw new MealieApiError(response.status, response.statusText, path);
-    return response.json() as Promise<T>;
+    return this.#readJson<T>(response, path);
   }
 ```
 
@@ -654,11 +675,11 @@ export function registerRecipeCreate(server: McpServer, client: MealieClient): v
 
 Each follows the archetype (one file + test, handler with `Pick<MealieClient, …>`, `jsonResult`/`errorResult`, register fn added to the right group function). Specifics:
 
-**7b `recipe_update`** — `Pick<…,"put"|"patch"|"get">`. Args: `slug: string`, `recipe: <full Recipe-Input as z.record(z.unknown())>` (pass-through object; the agent supplies the fields it wants to change against the full object — document "fetch with recipe_get, mutate, send back"), `method: z.enum(["put","patch"]).optional()` default `"put"`. Handler: `client[method]("/api/recipes/{slug}", recipe)` → re-fetch via `get` → concise. Annotations `{ readOnlyHint:false, idempotentHint:true, openWorldHint:true }`. Tests: routes to put vs patch; re-fetches; isError. Commit `feat(recipes): add recipe_update`.
+**7b `recipe_update`** — `Pick<…,"get"|"put"|"patch">`. Args: `slug: string`, `changes: z.record(z.unknown())` (the fields to change), `method: z.enum(["put","patch"]).optional()` default `"patch"`. **Fetch-merge (data-loss guard):** Mealie's PUT *and* PATCH both take the **full** `Recipe-Input` and do full-object replacement — sending only the changed fields silently wipes ingredients/instructions/etc. So the handler MUST: `const current = await client.get<RecipeDetail>("/api/recipes/{slug}")` → `const merged = { ...current, ...changes }` → `client[method]("/api/recipes/{slug}", merged)` → re-fetch → concise. Description tells the agent it only needs to pass changed fields (the tool merges against the current recipe). Annotations `{ readOnlyHint:false, idempotentHint:true, openWorldHint:true }`. Tests: shallow-merges changes onto the fetched recipe before sending (assert the sent body retains untouched fields); routes put vs patch; re-fetches; isError. Commit `feat(recipes): add recipe_update (fetch-merge)`.
 
 **7c `recipe_delete`** — `Pick<…,"delete">`. Args: `slug: string`, `confirm: z.boolean().optional()`. Handler: `requireConfirmation(args.confirm, \`delete recipe "${args.slug}"\`)` guard → `client.delete("/api/recipes/{slug}")` → `jsonResult({ deleted: args.slug })`. Annotations `{ readOnlyHint:false, destructiveHint:true, openWorldHint:true }`. Tests: missing confirm → isError + no delete call; confirm true → deletes + returns `{deleted}`; client throw → isError. Commit `feat(recipes): add recipe_delete with confirm gate`.
 
-**7d `recipe_update_many`** — `Pick<…,"put"|"patch">`. Args: `recipes: z.array(z.record(z.unknown()))`, `method: z.enum(["put","patch"]).optional()` default `"put"`. Handler: `client[method]("/api/recipes", recipes)` → `jsonResult({ updated: recipes.length })`. Annotations `{ readOnlyHint:false, idempotentHint:true, openWorldHint:true }`. Tests: routes put/patch; summary count; isError. Commit `feat(recipes): add recipe_update_many`.
+**7d `recipe_update_many`** — `Pick<…,"put"|"patch">`. Args: `recipes: z.array(z.record(z.unknown())).min(1)`, `method: z.enum(["put","patch"]).optional()` default `"put"`. **Data-loss guard:** same full-replacement semantics as 7b, but bulk has no per-item merge (that would be N fetches). So each array element MUST be a **complete** recipe object — the description must state clearly: "Each item must be a full recipe (e.g. from recipe_get with response_format=detailed); partial objects will overwrite and wipe omitted fields." Handler: `client[method]("/api/recipes", recipes)` → `jsonResult({ updated: recipes.length })`. Annotations `{ readOnlyHint:false, idempotentHint:true, openWorldHint:true }`. Tests: routes put/patch; summary count; isError. Commit `feat(recipes): add recipe_update_many`.
 
 **7e `recipe_duplicate`** — `Pick<…,"post">`. Args: `slug: string`, `name: z.string().optional()`. Body `RecipeDuplicate = { name? }`. Handler: `client.post<RecipeDetail>("/api/recipes/{slug}/duplicate", body)` returns `Recipe-Output` directly → `jsonResult(projectRecipe(result,"concise",[]))`. Annotations `{ readOnlyHint:false, openWorldHint:true }`. Tests: posts name; concise; isError. Commit `feat(recipes): add recipe_duplicate`.
 
