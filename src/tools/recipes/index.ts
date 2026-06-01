@@ -4,6 +4,7 @@ import { registerBatchReadTools, registerBatchWriteTools } from "./batch/index.j
 import { registerCoreReadTools, registerCoreWriteTools } from "./core/index.js";
 import { registerImagesReadTools, registerImagesWriteTools } from "./images/index.js";
 import { registerImportReadTools, registerImportWriteTools } from "./import/index.js";
+import { registerSocialReadTools, registerSocialWriteTools } from "./social/index.js";
 
 /** Options controlling which recipe tools are registered. */
 export type RegisterOptions = { readOnly: boolean };
@@ -25,10 +26,12 @@ export function registerRecipeTools(
   registerImportReadTools(server, client);
   registerImagesReadTools(server, client);
   registerBatchReadTools(server, client);
+  registerSocialReadTools(server, client);
 
   if (options.readOnly) return;
   registerCoreWriteTools(server, client);
   registerImportWriteTools(server, client);
   registerImagesWriteTools(server, client);
   registerBatchWriteTools(server, client);
+  registerSocialWriteTools(server, client);
 }
