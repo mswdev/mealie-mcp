@@ -54,8 +54,10 @@ Prefer **hand-written fakes** over mocking libraries. Fakes are simpler, more re
 
 **Before committing, ALWAYS run:**
 ```bash
-npm run build && npm run test && npm run lint
+npm run build && npm run typecheck && npm run test && npm run lint
 ```
+
+> `typecheck` (`tsc --noEmit`) is required: the build (tsup/esbuild) and tests (vitest/esbuild) do NOT type-check, and neither does biome. Without it, type errors in files not yet imported into the entry graph slip through.
 
 <!-- Add per-package gates as needed. Example:
 **Per-package gates:**
