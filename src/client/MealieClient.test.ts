@@ -74,6 +74,22 @@ describe("MealieClient write verbs", () => {
     await expect(client.put("/api/recipes/soup", {})).rejects.toBeInstanceOf(MealieApiError);
   });
 
+  it("surfaces Mealie's error body in the thrown error", async () => {
+    vi.stubGlobal(
+      "fetch",
+      async () =>
+        new Response('{"detail":"A recipe with that slug already exists"}', {
+          status: 409,
+          statusText: "Conflict",
+        }),
+    );
+    const client = new MealieClient("https://m.test", "tok");
+
+    await expect(client.post("/api/recipes", {})).rejects.toThrow(
+      "A recipe with that slug already exists",
+    );
+  });
+
   it("tolerates an empty 200 body (returns undefined, does not throw)", async () => {
     vi.stubGlobal("fetch", async () => new Response("", { status: 200 }));
     const client = new MealieClient("https://m.test", "tok");

@@ -2,6 +2,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import * as z from "zod";
 import type { MealieClient } from "../../../client/MealieClient.js";
+import type { components } from "../../../types/mealie.js";
 import { errorResult, jsonResult } from "../../result.js";
 import { readUploadFile } from "../../upload.js";
 import { type RecipeDetail, projectRecipe } from "../recipe-projection.js";
@@ -109,42 +110,46 @@ async function refetchConcise(client: ImportClient, slug: string): Promise<CallT
 /** POST /api/recipes/create/url — scrape a single URL into a new recipe. */
 async function importUrl(client: ImportClient, args: ImportArgs): Promise<CallToolResult> {
   if (!args.url) return missingField("url");
-  const slug = await client.post<string>("/api/recipes/create/url", {
+  const body: components["schemas"]["ScrapeRecipe"] = {
     url: args.url,
     includeTags: args.includeTags ?? false,
     includeCategories: args.includeCategories ?? false,
-  });
+  };
+  const slug = await client.post<string>("/api/recipes/create/url", body);
   return refetchConcise(client, slug);
 }
 
 /** POST /api/recipes/create/url/bulk — async batch scrape (returns a job ack). */
 async function importBulkUrl(client: ImportClient, args: ImportArgs): Promise<CallToolResult> {
   if (!args.urls?.length) return missingField("urls");
-  await client.post("/api/recipes/create/url/bulk", {
+  const body: components["schemas"]["CreateRecipeByUrlBulk"] = {
     imports: args.urls.map((url) => ({ url })),
-  });
+  };
+  await client.post("/api/recipes/create/url/bulk", body);
   return jsonResult({ accepted: args.urls.length });
 }
 
 /** POST /api/recipes/create/html-or-json — parse caller-supplied HTML/JSON. */
 async function importHtmlOrJson(client: ImportClient, args: ImportArgs): Promise<CallToolResult> {
   if (!args.data) return missingField("data");
-  const slug = await client.post<string>("/api/recipes/create/html-or-json", {
+  const body: components["schemas"]["ScrapeRecipeData"] = {
     data: args.data,
     includeTags: args.includeTags ?? false,
     includeCategories: args.includeCategories ?? false,
     ...(args.url ? { url: args.url } : {}),
-  });
+  };
+  const slug = await client.post<string>("/api/recipes/create/html-or-json", body);
   return refetchConcise(client, slug);
 }
 
 /** POST /api/recipes/test-scrape-url — preview a scrape without persisting. */
 async function previewUrl(client: ImportClient, args: ImportArgs): Promise<CallToolResult> {
   if (!args.url) return missingField("url");
-  const result = await client.post("/api/recipes/test-scrape-url", {
+  const body: components["schemas"]["ScrapeRecipeTest"] = {
     url: args.url,
     useOpenAI: false,
-  });
+  };
+  const result = await client.post("/api/recipes/test-scrape-url", body);
   return jsonResult(result);
 }
 

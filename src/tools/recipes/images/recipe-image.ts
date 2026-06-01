@@ -2,6 +2,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import * as z from "zod";
 import type { MealieClient } from "../../../client/MealieClient.js";
+import type { components } from "../../../types/mealie.js";
 import { requireConfirmation } from "../../confirm.js";
 import { errorResult, jsonResult } from "../../result.js";
 import { readUploadFile } from "../../upload.js";
@@ -79,11 +80,12 @@ async function uploadImage(
 /** POST JSON telling Mealie to fetch the image from a URL. */
 async function setImageUrl(client: ImageClient, args: ImageArgs): Promise<CallToolResult> {
   if (!args.url) return missing("url");
-  await client.post(`/api/recipes/${args.slug}/image`, {
+  const body: components["schemas"]["ScrapeRecipe"] = {
     url: args.url,
     includeTags: false,
     includeCategories: false,
-  });
+  };
+  await client.post(`/api/recipes/${args.slug}/image`, body);
   return jsonResult({ slug: args.slug, imageSource: args.url });
 }
 

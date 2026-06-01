@@ -2,6 +2,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import * as z from "zod";
 import type { MealieClient } from "../../../client/MealieClient.js";
+import type { components } from "../../../types/mealie.js";
 import { requireConfirmation } from "../../confirm.js";
 import { errorResult, jsonResult } from "../../result.js";
 import { readUploadFile } from "../../upload.js";
@@ -84,12 +85,15 @@ async function create(
   if (!args.recipeId) return missing("recipeId");
   if (!args.subject) return missing("subject");
   if (!args.eventType) return missing("eventType");
-  const body = {
+  // image/timestamp are contract-required (RecipeTimelineEventIn); default them so
+  // Mealie does not reject the event — null image = "no image", timestamp = now.
+  const body: components["schemas"]["RecipeTimelineEventIn"] = {
     recipeId: args.recipeId,
     subject: args.subject,
     eventType: args.eventType,
+    image: null,
+    timestamp: args.timestamp ?? new Date().toISOString(),
     ...(args.eventMessage ? { eventMessage: args.eventMessage } : {}),
-    ...(args.timestamp ? { timestamp: args.timestamp } : {}),
   };
   return jsonResult(await client.post("/api/recipes/timeline/events", body));
 }
@@ -101,7 +105,7 @@ async function update(
 ): Promise<CallToolResult> {
   if (!args.eventId) return missing("eventId");
   if (!args.subject) return missing("subject");
-  const body = {
+  const body: components["schemas"]["RecipeTimelineEventUpdate"] = {
     subject: args.subject,
     ...(args.eventMessage ? { eventMessage: args.eventMessage } : {}),
   };

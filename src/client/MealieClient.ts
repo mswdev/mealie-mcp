@@ -62,10 +62,10 @@ export class MealieClient {
    * @throws {MealieApiError} when the API returns a non-2xx status
    */
   async #readJson<T>(response: Response, path: string): Promise<T> {
-    if (!response.ok) {
-      throw new MealieApiError(response.status, response.statusText, path);
-    }
     const text = await response.text();
+    if (!response.ok) {
+      throw new MealieApiError(response.status, response.statusText, path, text);
+    }
     return (text ? JSON.parse(text) : undefined) as T;
   }
 
