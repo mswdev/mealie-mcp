@@ -86,4 +86,28 @@ describe("recipeCommentWriteHandler", () => {
     });
     expect(result.isError).toBe(true);
   });
+
+  it("create without recipeId returns isError", async () => {
+    const result = await recipeCommentWriteHandler(fakeClient({}), {
+      action: "create",
+      text: "yum",
+    });
+    expect(result.isError).toBe(true);
+  });
+
+  it("update without commentId returns isError", async () => {
+    const result = await recipeCommentWriteHandler(fakeClient({}), {
+      action: "update",
+      text: "edited",
+    });
+    expect(result.isError).toBe(true);
+  });
+
+  it("update without text returns isError", async () => {
+    const result = await recipeCommentWriteHandler(fakeClient({}), {
+      action: "update",
+      commentId: "c1",
+    });
+    expect(result.isError).toBe(true);
+  });
 });

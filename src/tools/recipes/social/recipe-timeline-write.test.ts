@@ -113,4 +113,42 @@ describe("recipeTimelineWriteHandler", () => {
     });
     expect(result.isError).toBe(true);
   });
+
+  it("create without recipeId returns isError", async () => {
+    const result = await recipeTimelineWriteHandler(fakeClient({}), {
+      action: "create",
+      subject: "Made it",
+      eventType: "info",
+    });
+    expect(result.isError).toBe(true);
+  });
+
+  it("create without eventType returns isError", async () => {
+    const result = await recipeTimelineWriteHandler(fakeClient({}), {
+      action: "create",
+      recipeId: "u1",
+      subject: "Made it",
+    });
+    expect(result.isError).toBe(true);
+  });
+
+  it("set_image without eventId returns isError", async () => {
+    const file = new Blob([new Uint8Array([1])]);
+    const result = await recipeTimelineWriteHandler(
+      fakeClient({}),
+      { action: "set_image", extension: "jpg" },
+      file,
+    );
+    expect(result.isError).toBe(true);
+  });
+
+  it("set_image without extension returns isError", async () => {
+    const file = new Blob([new Uint8Array([1])]);
+    const result = await recipeTimelineWriteHandler(
+      fakeClient({}),
+      { action: "set_image", eventId: "e1" },
+      file,
+    );
+    expect(result.isError).toBe(true);
+  });
 });

@@ -110,6 +110,17 @@ describe("recipeImageHandler", () => {
     expect(result.isError).toBe(true);
   });
 
+  it("upload without an extension returns isError", async () => {
+    const file = new Blob([new Uint8Array([1])]);
+    const result = await recipeImageHandler(
+      fakeClient({}),
+      { slug: "soup", action: "upload" },
+      file,
+    );
+
+    expect(result.isError).toBe(true);
+  });
+
   it("returns isError when the client throws", async () => {
     const client = {
       post: async <T>(): Promise<T> => {

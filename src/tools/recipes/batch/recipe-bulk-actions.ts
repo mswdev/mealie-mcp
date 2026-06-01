@@ -13,8 +13,16 @@ const inputSchema = {
     .enum(["tag", "categorize", "settings", "delete"])
     .describe("Bulk operation to apply to the given recipes"),
   recipes: z.array(z.string()).min(1).describe("Recipe slugs or ids to act on"),
-  tags: z.array(z.string()).optional().describe("Tag names (action=tag)"),
-  categories: z.array(z.string()).optional().describe("Category names (action=categorize)"),
+  tags: z
+    .array(z.record(z.unknown()))
+    .optional()
+    .describe("Full tag objects to assign — each must include id, slug, and name (action=tag)"),
+  categories: z
+    .array(z.record(z.unknown()))
+    .optional()
+    .describe(
+      "Full category objects to assign — each must include id, slug, and name (action=categorize)",
+    ),
   settings: z.record(z.unknown()).optional().describe("Recipe settings object (action=settings)"),
   confirm: z.boolean().optional().describe("Must be true to bulk-delete (action=delete)"),
 };
@@ -22,8 +30,8 @@ const inputSchema = {
 type BulkArgs = {
   action: "tag" | "categorize" | "settings" | "delete";
   recipes: string[];
-  tags?: string[] | undefined;
-  categories?: string[] | undefined;
+  tags?: Record<string, unknown>[] | undefined;
+  categories?: Record<string, unknown>[] | undefined;
   settings?: Record<string, unknown> | undefined;
   confirm?: boolean | undefined;
 };
@@ -53,16 +61,11 @@ export async function recipeBulkActionsHandler(
 async function applyBulkAction(client: BulkClient, args: BulkArgs): Promise<CallToolResult> {
   if (args.action === "tag") {
     if (!args.tags) return missing("tags");
-    return post(client, "tag", { recipes: args.recipes, tags: byName(args.tags) }, args);
+    return post(client, "tag", { recipes: args.recipes, tags: args.tags }, args);
   }
   if (args.action === "categorize") {
     if (!args.categories) return missing("categories");
-    return post(
-      client,
-      "categorize",
-      { recipes: args.recipes, categories: byName(args.categories) },
-      args,
-    );
+    return post(client, "categorize", { recipes: args.recipes, categories: args.categories }, args);
   }
   if (!args.settings) return missing("settings");
   return post(client, "settings", { recipes: args.recipes, settings: args.settings }, args);
@@ -93,11 +96,6 @@ async function post(
   return jsonResult({ action: args.action, count: args.recipes.length });
 }
 
-/** Maps a list of names to Mealie's {name} objects (TagBase/CategoryBase). */
-function byName(names: string[]): { name: string }[] {
-  return names.map((name) => ({ name }));
-}
-
 /** Returns an isError result naming the field the chosen action requires. */
 function missing(field: string): CallToolResult {
   return {
@@ -118,7 +116,7 @@ export function registerRecipeBulkActions(server: McpServer, client: MealieClien
     {
       title: "Bulk Recipe Actions",
       description:
-        "Apply a bulk action to many recipes: tag, categorize, change settings, or delete. Delete is destructive (confirm:true).",
+        "Apply a bulk action to many recipes: tag, categorize, change settings, or delete. tag/categorize take full tag/category objects (id, slug, name). Delete is destructive (confirm:true).",
       inputSchema,
       annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: true },
     },

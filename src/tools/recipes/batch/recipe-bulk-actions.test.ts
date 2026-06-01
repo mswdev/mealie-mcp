@@ -19,34 +19,33 @@ function parse(r: { content: { type: string }[] }): Record<string, unknown> {
 }
 
 describe("recipeBulkActionsHandler", () => {
-  it("tag wraps tag names into TagBase objects", async () => {
+  it("tag forwards full tag objects (TagBase) unchanged", async () => {
     const captured: Captured = {};
+    const tags = [{ id: "t1", slug: "quick", name: "Quick" }];
 
     const result = await recipeBulkActionsHandler(fakeClient(captured), {
       action: "tag",
       recipes: ["a", "b"],
-      tags: ["quick", "vegan"],
+      tags,
     });
 
     expect(captured.path).toBe("/api/recipes/bulk-actions/tag");
-    expect(captured.body).toEqual({
-      recipes: ["a", "b"],
-      tags: [{ name: "quick" }, { name: "vegan" }],
-    });
+    expect(captured.body).toEqual({ recipes: ["a", "b"], tags });
     expect(parse(result)).toEqual({ action: "tag", count: 2 });
   });
 
-  it("categorize wraps category names", async () => {
+  it("categorize forwards full category objects unchanged", async () => {
     const captured: Captured = {};
+    const categories = [{ id: "c1", slug: "dinner", name: "Dinner" }];
 
     await recipeBulkActionsHandler(fakeClient(captured), {
       action: "categorize",
       recipes: ["a"],
-      categories: ["dinner"],
+      categories,
     });
 
     expect(captured.path).toBe("/api/recipes/bulk-actions/categorize");
-    expect(captured.body).toEqual({ recipes: ["a"], categories: [{ name: "dinner" }] });
+    expect(captured.body).toEqual({ recipes: ["a"], categories });
   });
 
   it("settings forwards the settings object", async () => {
