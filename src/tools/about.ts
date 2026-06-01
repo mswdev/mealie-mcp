@@ -1,8 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import type { AppAbout, MealieClient } from "../client/MealieClient.js";
-import { logger } from "../logger.js";
-import { JSON_INDENT } from "./format.js";
+import { errorResult, jsonResult } from "./result.js";
 
 /**
  * Handles the get_about tool call — returns Mealie instance info.
@@ -15,16 +14,9 @@ export async function getAboutHandler(
 ): Promise<CallToolResult> {
   try {
     const about: AppAbout = await client.getAbout();
-    return {
-      content: [{ type: "text", text: JSON.stringify(about, null, JSON_INDENT) }],
-    };
+    return jsonResult(about);
   } catch (error) {
-    logger.error({ err: error }, "get_about failed");
-    const message = error instanceof Error ? error.message : String(error);
-    return {
-      content: [{ type: "text", text: `Failed to get Mealie info: ${message}` }],
-      isError: true,
-    };
+    return errorResult(error, "get_about", "Failed to get Mealie info");
   }
 }
 

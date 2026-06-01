@@ -1,37 +1,12 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import * as z from "zod";
-import type { MealieClient } from "../../client/MealieClient.js";
-import { logger } from "../../logger.js";
-import type { components } from "../../types/mealie.js";
-import { JSON_INDENT } from "../format.js";
+import type { MealieClient } from "../../../client/MealieClient.js";
+import { errorResult, jsonResult } from "../../result.js";
+import { type Includable, type RecipeDetail, projectRecipe } from "../recipe-projection.js";
 
-type RecipeDetail = components["schemas"]["Recipe-Output"];
-type Includable = "comments" | "nutrition";
 /** Minimal client surface the handler needs (eases test fakes). */
 type GetClient = Pick<MealieClient, "get">;
-
-/** Lightweight fields kept in the concise projection (design §1.3). */
-const CONCISE_FIELDS = [
-  "id",
-  "slug",
-  "name",
-  "description",
-  "image",
-  "rating",
-  "recipeServings",
-  "recipeYield",
-  "recipeYieldQuantity",
-  "totalTime",
-  "prepTime",
-  "cookTime",
-  "performTime",
-  "recipeCategory",
-  "tags",
-  "tools",
-  "dateUpdated",
-  "lastMade",
-] as const;
 
 const inputSchema = {
   slug: z.string().describe("The recipe slug (from recipe_search results)"),
@@ -61,32 +36,11 @@ type GetArgs = {
 export async function recipeGetHandler(client: GetClient, args: GetArgs): Promise<CallToolResult> {
   try {
     const recipe = await client.get<RecipeDetail>(`/api/recipes/${args.slug}`);
-    const projected = project(recipe, args.response_format ?? "concise", args.include ?? []);
-    return {
-      content: [{ type: "text", text: JSON.stringify(projected, null, JSON_INDENT) }],
-    };
+    const projected = projectRecipe(recipe, args.response_format ?? "concise", args.include ?? []);
+    return jsonResult(projected);
   } catch (error) {
-    logger.error({ err: error }, "recipe_get failed");
-    const message = error instanceof Error ? error.message : String(error);
-    return {
-      content: [{ type: "text", text: `Failed to get recipe: ${message}` }],
-      isError: true,
-    };
+    return errorResult(error, "recipe_get", "Failed to get recipe");
   }
-}
-
-/** Projects a full recipe to concise (+ optional includes) or returns it whole when detailed. */
-function project(
-  recipe: RecipeDetail,
-  format: "concise" | "detailed",
-  include: Includable[],
-): Record<string, unknown> {
-  if (format === "detailed") return recipe as unknown as Record<string, unknown>;
-  const source = recipe as unknown as Record<string, unknown>;
-  const concise: Record<string, unknown> = {};
-  for (const field of CONCISE_FIELDS) concise[field] = source[field];
-  for (const field of include) concise[field] = source[field];
-  return concise;
 }
 
 /**

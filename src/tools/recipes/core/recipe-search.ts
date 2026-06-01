@@ -1,11 +1,10 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import * as z from "zod";
-import type { MealieClient } from "../../client/MealieClient.js";
-import type { PaginatedResult } from "../../client/pagination.js";
-import { logger } from "../../logger.js";
-import type { components } from "../../types/mealie.js";
-import { JSON_INDENT } from "../format.js";
+import type { MealieClient } from "../../../client/MealieClient.js";
+import type { PaginatedResult } from "../../../client/pagination.js";
+import type { components } from "../../../types/mealie.js";
+import { errorResult, jsonResult } from "../../result.js";
 
 /** Default page size — modest, never unbounded (design §1.3). */
 const DEFAULT_PER_PAGE = 20;
@@ -62,16 +61,9 @@ export async function recipeSearchHandler(
       ...args,
       perPage: args.perPage ?? DEFAULT_PER_PAGE,
     });
-    return {
-      content: [{ type: "text", text: JSON.stringify(toConcise(page), null, JSON_INDENT) }],
-    };
+    return jsonResult(toConcise(page));
   } catch (error) {
-    logger.error({ err: error }, "recipe_search failed");
-    const message = error instanceof Error ? error.message : String(error);
-    return {
-      content: [{ type: "text", text: `Failed to search recipes: ${message}` }],
-      isError: true,
-    };
+    return errorResult(error, "recipe_search", "Failed to search recipes");
   }
 }
 

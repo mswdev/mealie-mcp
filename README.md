@@ -2,7 +2,7 @@
 
 An MCP (Model Context Protocol) server for [Mealie](https://mealie.io) — the self-hosted recipe manager. Connect any MCP-compatible AI assistant to your Mealie instance.
 
-> **Status: early scaffold.** Today the server ships a single `get_about` tool plus the framework to grow. The goal is full coverage of the Mealie REST API — other Mealie MCPs stall at a handful of endpoints, and this one is built to go the distance.
+> **Status: early, growing fast.** The server ships the full **Recipes** domain — search, read, create, update, import (URL/HTML/zip/image), bulk actions, images & assets, comments, timeline, sharing, exports, and the ingredient parser — plus `get_about`. The goal is full coverage of the Mealie REST API — other Mealie MCPs stall at a handful of endpoints, and this one is built to go the distance.
 
 ## Installation
 
@@ -22,6 +22,21 @@ Set these environment variables before running:
 | `MEALIE_API_TOKEN` | Yes | API token from **Mealie → Profile → API Tokens** |
 | `TRANSPORT` | No | `stdio` (default) or `http` |
 | `PORT` | No | HTTP port when using `TRANSPORT=http` (default: `3000`) |
+| `MEALIE_READ_ONLY` | No | When `true`/`1`/`yes`/`on`, every mutating tool (create, update, delete, import, bulk actions, etc.) is **not registered** — the server exposes reads only. Default: `false`. |
+
+## Recipe Tools
+
+The recipes domain is exposed as ~23 tools (reads always available; writes hidden when `MEALIE_READ_ONLY` is set):
+
+- **Read:** `recipe_search`, `recipe_get`, `recipe_suggestions`, `recipe_comments`, `recipe_timeline`, `recipe_share`, `recipe_export`, `recipe_media`, `recipe_parse_ingredients`
+- **Write:** `recipe_create`, `recipe_update`, `recipe_delete`, `recipe_update_many`, `recipe_duplicate`, `recipe_mark_made`, `recipe_import`, `recipe_image`, `recipe_assets`, `recipe_bulk_actions`, `recipe_export_run`, `recipe_comment_write`, `recipe_timeline_write`, `recipe_share_write`
+
+A few things worth knowing:
+
+- **Destructive actions require confirmation.** Delete/purge/revoke tools refuse to run unless you pass `confirm: true`. This is enforced server-side, in addition to the `MEALIE_READ_ONLY` switch.
+- **URL imports run on your Mealie server.** `recipe_import` with a URL forwards the URL to Mealie, which fetches it server-side — this MCP server never fetches the URL itself. Mealie blocks private/internal addresses via its `AsyncSafeTransport` SSRF guard (the CVE-2024-31991…31994 fix). **That protection requires Mealie ≥ 1.4.0**; on older instances URL import is unprotected and the MCP layer cannot compensate.
+- **File uploads are stdio/local only.** Image/asset/zip uploads take a *file path on the machine running the MCP server*. This works for the default `stdio` transport (the server shares your filesystem); it does not work over remote `http` transport. Prefer `recipe_image` with `action: set_url` (Mealie fetches the image) when a path isn't available.
+- **Media is returned as URLs, never raw bytes.** `recipe_media` and file/zip exports return reference URLs.
 
 ## Usage with MCP Clients
 
