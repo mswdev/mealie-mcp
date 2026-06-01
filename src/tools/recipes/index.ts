@@ -1,6 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { MealieClient } from "../../client/MealieClient.js";
 import { registerCoreReadTools, registerCoreWriteTools } from "./core/index.js";
+import { registerImportReadTools, registerImportWriteTools } from "./import/index.js";
 
 /** Options controlling which recipe tools are registered. */
 export type RegisterOptions = { readOnly: boolean };
@@ -19,7 +20,9 @@ export function registerRecipeTools(
   options: RegisterOptions,
 ): void {
   registerCoreReadTools(server, client);
+  registerImportReadTools(server, client);
 
   if (options.readOnly) return;
   registerCoreWriteTools(server, client);
+  registerImportWriteTools(server, client);
 }
