@@ -41,6 +41,8 @@ export function registerAppDownloadFile(server: McpServer, client: MealieClient)
       description:
         "Resolves a signed download token to the Mealie file-download URL (e.g. for backups/exports). Returns a URL reference, not the file bytes.",
       inputSchema,
+      // openWorldHint stays true for app_* convention uniformity even though this
+      // handler only builds a string — the URL it returns targets the external Mealie API.
       annotations: { readOnlyHint: true, openWorldHint: true },
     },
     (args) => appDownloadFileHandler(client, args),
