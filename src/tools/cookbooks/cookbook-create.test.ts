@@ -39,7 +39,10 @@ describe("cookbookCreateHandler", () => {
       queryFilterString: "tags.name = quick",
     });
 
-    expect(captured[0]?.body).toMatchObject({ public: true, queryFilterString: "tags.name = quick" });
+    expect(captured[0]?.body).toMatchObject({
+      public: true,
+      queryFilterString: "tags.name = quick",
+    });
   });
 
   it("returns an error result when the client throws", async () => {

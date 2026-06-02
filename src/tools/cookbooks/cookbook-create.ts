@@ -23,7 +23,9 @@ const inputSchema = {
   queryFilterString: z
     .string()
     .optional()
-    .describe('Optional Mealie filter expression selecting recipes (e.g. \'tags.name CONTAINS ALL ["quick"]\')'),
+    .describe(
+      "Optional Mealie filter expression selecting recipes (e.g. 'tags.name CONTAINS ALL [\"quick\"]')",
+    ),
 };
 
 type CreateArgs = {

@@ -20,7 +20,9 @@ const inputSchema = {
   items: z
     .array(z.record(z.unknown()))
     .optional()
-    .describe("Full UpdateCookBook objects for a bulk update (each must include id, groupId, householdId)"),
+    .describe(
+      "Full UpdateCookBook objects for a bulk update (each must include id, groupId, householdId)",
+    ),
 };
 
 type UpdateArgs = {

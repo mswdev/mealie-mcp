@@ -6,7 +6,10 @@ type Captured = { path: string; query?: Record<string, unknown> | undefined };
 
 function fakeClient(page: PaginatedResult<unknown>, captured: Captured[]) {
   return {
-    async getPaginated<T>(path: string, query?: Record<string, unknown>): Promise<PaginatedResult<T>> {
+    async getPaginated<T>(
+      path: string,
+      query?: Record<string, unknown>,
+    ): Promise<PaginatedResult<T>> {
       captured.push({ path, query });
       return page as PaginatedResult<T>;
     },

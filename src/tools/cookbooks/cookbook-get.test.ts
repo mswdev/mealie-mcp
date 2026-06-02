@@ -34,7 +34,10 @@ describe("cookbookGetHandler", () => {
   });
 
   it("returns the whole cookbook when detailed", async () => {
-    const result = await cookbookGetHandler(fakeClient([]), { id: "u1", response_format: "detailed" });
+    const result = await cookbookGetHandler(fakeClient([]), {
+      id: "u1",
+      response_format: "detailed",
+    });
 
     const body = JSON.parse((result.content[0] as { text: string }).text);
     expect(body).toHaveProperty("queryFilter");
