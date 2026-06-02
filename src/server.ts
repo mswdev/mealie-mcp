@@ -2,6 +2,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { MealieClient } from "./client/MealieClient.js";
 import { registerAboutTools } from "./tools/about.js";
 import { registerCookbookTools } from "./tools/cookbooks/index.js";
+import { registerFoodsUnitsTools } from "./tools/foods-units/index.js";
 import { registerMealPlanTools } from "./tools/meal-plans/index.js";
 import { registerOrganizerTools } from "./tools/organizers/index.js";
 import { registerRecipeTools } from "./tools/recipes/index.js";
@@ -30,6 +31,7 @@ export function createServer(client: MealieClient, options: ServerOptions): McpS
   registerMealPlanTools(server, client, options);
   registerShoppingTools(server, client, options);
   registerOrganizerTools(server, client, options);
+  registerFoodsUnitsTools(server, client, options);
 
   return server;
 }
