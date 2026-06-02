@@ -4,6 +4,7 @@ import { registerAboutTools } from "./tools/about.js";
 import { registerCookbookTools } from "./tools/cookbooks/index.js";
 import { registerMealPlanTools } from "./tools/meal-plans/index.js";
 import { registerRecipeTools } from "./tools/recipes/index.js";
+import { registerShoppingTools } from "./tools/shopping-lists/index.js";
 
 const SERVER_NAME = "mealie-mcp";
 const SERVER_VERSION = "0.1.0";
@@ -26,6 +27,7 @@ export function createServer(client: MealieClient, options: ServerOptions): McpS
   registerRecipeTools(server, client, options);
   registerCookbookTools(server, client, options);
   registerMealPlanTools(server, client, options);
+  registerShoppingTools(server, client, options);
 
   return server;
 }
