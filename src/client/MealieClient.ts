@@ -198,14 +198,4 @@ export class MealieClient {
     });
     return this.#readJson<T>(response, path);
   }
-
-  /**
-   * Returns information about the connected Mealie instance.
-   *
-   * @returns The connected Mealie instance's about info (version, config, feature flags)
-   * @see GET /api/app/about
-   */
-  async getAbout(): Promise<AppAbout> {
-    return this.get<AppAbout>("/api/app/about");
-  }
 }

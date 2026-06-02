@@ -55,6 +55,9 @@ const WRITE_TOOLS = [
 
 /** A representative set of reads that must always be present. */
 const READ_TOOLS = [
+  // app
+  "app_get_info",
+  "app_download_file",
   "recipe_search",
   "recipe_get",
   "recipe_suggestions",
@@ -102,9 +105,9 @@ describe("read-only switch", () => {
 
     for (const read of READ_TOOLS) expect(names).toContain(read);
     for (const write of WRITE_TOOLS) expect(names).not.toContain(write);
-    // get_about + 24 reads (9 recipe + 2 cookbook + 4 meal-plan + 3 shopping + 2 organizer
+    // 26 reads (2 app + 9 recipe + 2 cookbook + 4 meal-plan + 3 shopping + 2 organizer
     // + 4 foods/units), no writes
-    expect(names).toHaveLength(25);
+    expect(names).toHaveLength(26);
   });
 
   it("exposes mutating tools when not read-only", async () => {
@@ -112,8 +115,8 @@ describe("read-only switch", () => {
 
     for (const read of READ_TOOLS) expect(names).toContain(read);
     for (const write of WRITE_TOOLS) expect(names).toContain(write);
-    // get_about + 24 reads (9 recipe + 2 cookbook + 4 meal-plan + 3 shopping + 2 organizer + 4 foods/units)
+    // 26 reads (2 app + 9 recipe + 2 cookbook + 4 meal-plan + 3 shopping + 2 organizer + 4 foods/units)
     // + 40 writes (14 recipe + 3 cookbook + 4 meal-plan + 8 shopping + 3 organizer + 8 foods/units)
-    expect(names).toHaveLength(65);
+    expect(names).toHaveLength(66);
   });
 });
