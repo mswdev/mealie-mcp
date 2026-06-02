@@ -38,6 +38,10 @@ const WRITE_TOOLS = [
   "shopping_item_create",
   "shopping_item_update",
   "shopping_item_delete",
+  // organizers
+  "organizer_create",
+  "organizer_update",
+  "organizer_delete",
 ];
 
 /** A representative set of reads that must always be present. */
@@ -63,6 +67,9 @@ const READ_TOOLS = [
   "shopping_list_search",
   "shopping_list_get",
   "shopping_item_get",
+  // organizers
+  "organizer_search",
+  "organizer_get",
 ];
 
 async function listToolNames(readOnly: boolean): Promise<string[]> {
@@ -81,8 +88,8 @@ describe("read-only switch", () => {
 
     for (const read of READ_TOOLS) expect(names).toContain(read);
     for (const write of WRITE_TOOLS) expect(names).not.toContain(write);
-    // get_about + 18 reads (9 recipe + 2 cookbook + 4 meal-plan + 3 shopping), no writes
-    expect(names).toHaveLength(19);
+    // get_about + 20 reads (9 recipe + 2 cookbook + 4 meal-plan + 3 shopping + 2 organizer), no writes
+    expect(names).toHaveLength(21);
   });
 
   it("exposes mutating tools when not read-only", async () => {
@@ -90,7 +97,8 @@ describe("read-only switch", () => {
 
     for (const read of READ_TOOLS) expect(names).toContain(read);
     for (const write of WRITE_TOOLS) expect(names).toContain(write);
-    // get_about + 18 reads (9 recipe + 2 cookbook + 4 meal-plan + 3 shopping) + 29 writes (14 recipe + 3 cookbook + 4 meal-plan + 8 shopping)
-    expect(names).toHaveLength(48);
+    // get_about + 20 reads (9 recipe + 2 cookbook + 4 meal-plan + 3 shopping + 2 organizer)
+    // + 32 writes (14 recipe + 3 cookbook + 4 meal-plan + 8 shopping + 3 organizer)
+    expect(names).toHaveLength(53);
   });
 });
