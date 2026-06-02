@@ -2,7 +2,7 @@
 
 An MCP (Model Context Protocol) server for [Mealie](https://mealie.io) — the self-hosted recipe manager. Connect any MCP-compatible AI assistant to your Mealie instance.
 
-> **Status: early, growing fast.** The server ships the full **Recipes** domain — search, read, create, update, import (URL/HTML/zip/image), bulk actions, images & assets, comments, timeline, sharing, exports, and the ingredient parser — plus `get_about`. The goal is full coverage of the Mealie REST API — other Mealie MCPs stall at a handful of endpoints, and this one is built to go the distance.
+> **Status: early, growing fast.** The server ships the **entire default surface** — Recipes, Meal Plans, Shopping Lists, Cookbooks, Organizers (categories/tags/tools), Foods & Units, and App info. The goal is full coverage of the Mealie REST API — other Mealie MCPs stall at a handful of endpoints, and this one is built to go the distance.
 
 ## Installation
 
@@ -23,6 +23,13 @@ Set these environment variables before running:
 | `TRANSPORT` | No | `stdio` (default) or `http` |
 | `PORT` | No | HTTP port when using `TRANSPORT=http` (default: `3000`) |
 | `MEALIE_READ_ONLY` | No | When `true`/`1`/`yes`/`on`, every mutating tool (create, update, delete, import, bulk actions, etc.) is **not registered** — the server exposes reads only. Default: `false`. |
+
+## App Tools
+
+The app domain (2 read tools) covers instance info and file downloads:
+
+- `app_get_info` — the connected instance's version, configuration, and feature flags. Pass `include: ["startup_info", "theme"]` to also bundle startup diagnostics and the UI theme.
+- `app_download_file` — resolves a signed download token (e.g. from a backup/export tool) to the Mealie download URL. Returns a URL reference, not the file bytes.
 
 ## Recipe Tools
 

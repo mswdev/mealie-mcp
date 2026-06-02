@@ -1,6 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { MealieClient } from "./client/MealieClient.js";
-import { registerAboutTools } from "./tools/about.js";
+import { registerAppTools } from "./tools/app/index.js";
 import { registerCookbookTools } from "./tools/cookbooks/index.js";
 import { registerFoodsUnitsTools } from "./tools/foods-units/index.js";
 import { registerMealPlanTools } from "./tools/meal-plans/index.js";
@@ -25,7 +25,7 @@ export type ServerOptions = { readOnly: boolean };
 export function createServer(client: MealieClient, options: ServerOptions): McpServer {
   const server = new McpServer({ name: SERVER_NAME, version: SERVER_VERSION });
 
-  registerAboutTools(server, client);
+  registerAppTools(server, client);
   registerRecipeTools(server, client, options);
   registerCookbookTools(server, client, options);
   registerMealPlanTools(server, client, options);
