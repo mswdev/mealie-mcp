@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { MealieClient } from "./client/MealieClient.js";
 import { createServer } from "./server.js";
 
-/** All mutating recipe tools — none of these may appear when read-only is on. */
+/** All mutating tools — none of these may appear when read-only is on. */
 const WRITE_TOOLS = [
   "recipe_create",
   "recipe_update",
@@ -20,6 +20,24 @@ const WRITE_TOOLS = [
   "recipe_comment_write",
   "recipe_timeline_write",
   "recipe_share_write",
+  // cookbooks
+  "cookbook_create",
+  "cookbook_update",
+  "cookbook_delete",
+  // meal plans
+  "mealplan_create",
+  "mealplan_update",
+  "mealplan_delete",
+  "mealplan_rule_write",
+  // shopping lists
+  "shopping_list_create",
+  "shopping_list_update",
+  "shopping_list_delete",
+  "shopping_list_label_settings",
+  "shopping_list_recipe_references",
+  "shopping_item_create",
+  "shopping_item_update",
+  "shopping_item_delete",
 ];
 
 /** A representative set of reads that must always be present. */
@@ -33,6 +51,18 @@ const READ_TOOLS = [
   "recipe_share",
   "recipe_export",
   "recipe_parse_ingredients",
+  // cookbooks
+  "cookbook_search",
+  "cookbook_get",
+  // meal plans
+  "mealplan_search",
+  "mealplan_get",
+  "mealplan_today",
+  "mealplan_rules",
+  // shopping lists
+  "shopping_list_search",
+  "shopping_list_get",
+  "shopping_item_get",
 ];
 
 async function listToolNames(readOnly: boolean): Promise<string[]> {
@@ -51,8 +81,8 @@ describe("read-only switch", () => {
 
     for (const read of READ_TOOLS) expect(names).toContain(read);
     for (const write of WRITE_TOOLS) expect(names).not.toContain(write);
-    // get_about + 9 recipe reads, no writes
-    expect(names).toHaveLength(10);
+    // get_about + 18 reads (9 recipe + 2 cookbook + 4 meal-plan + 3 shopping), no writes
+    expect(names).toHaveLength(19);
   });
 
   it("exposes mutating tools when not read-only", async () => {
@@ -60,7 +90,7 @@ describe("read-only switch", () => {
 
     for (const read of READ_TOOLS) expect(names).toContain(read);
     for (const write of WRITE_TOOLS) expect(names).toContain(write);
-    // get_about + 9 recipe reads + 14 recipe writes
-    expect(names).toHaveLength(24);
+    // get_about + 18 reads (9 recipe + 2 cookbook + 4 meal-plan + 3 shopping) + 29 writes (14 recipe + 3 cookbook + 4 meal-plan + 8 shopping)
+    expect(names).toHaveLength(48);
   });
 });

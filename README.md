@@ -38,6 +38,33 @@ A few things worth knowing:
 - **File uploads are stdio/local only.** Image/asset/zip uploads take a *file path on the machine running the MCP server*. This works for the default `stdio` transport (the server shares your filesystem); it does not work over remote `http` transport. Prefer `recipe_image` with `action: set_url` (Mealie fetches the image) when a path isn't available.
 - **Media is returned as URLs, never raw bytes.** `recipe_media` and file/zip exports return reference URLs.
 
+## Meal Plan Tools
+
+The meal-plans domain (8 tools) covers meal-plan entries and the rules that drive random meals:
+
+- **Read:** `mealplan_search` (date-range + pagination), `mealplan_get`, `mealplan_today`, `mealplan_rules`
+- **Write:** `mealplan_create` (`mode: entry` for a specific recipe, `mode: random` to let Mealie pick per the household's rules), `mealplan_update`, `mealplan_delete`, `mealplan_rule_write`
+
+> Meal-plan entry ids are **integers** (rule ids are UUIDs). `mealplan_today` returns the meals planned for the current day.
+
+## Shopping List Tools
+
+The shopping-lists domain (11 tools) covers lists and their items:
+
+- **Read:** `shopping_list_search`, `shopping_list_get` (bundles items, recipe references, and label settings), `shopping_item_get`
+- **Write:** `shopping_list_create`, `shopping_list_update`, `shopping_list_delete`, `shopping_list_label_settings`, `shopping_list_recipe_references` (add a recipe's ingredients to a list, or remove them), `shopping_item_create`, `shopping_item_update`, `shopping_item_delete`
+
+> Item create/update/delete accept a single item or a bulk array. `shopping_item_create` items require `shoppingListId` and `display`.
+
+## Cookbook Tools
+
+The cookbooks domain (5 tools). A cookbook is a saved filter over recipes:
+
+- **Read:** `cookbook_search`, `cookbook_get`
+- **Write:** `cookbook_create`, `cookbook_update` (single or bulk), `cookbook_delete`
+
+> All three domains are **default-enabled**. In Mealie they live under `/api/households/`; this server groups them by semantic domain (`mealplan_*`, `shopping_*`, `cookbook_*`). Their write tools are hidden when `MEALIE_READ_ONLY` is set, and every delete requires `confirm: true`.
+
 ## Usage with MCP Clients
 
 ### Claude Desktop
