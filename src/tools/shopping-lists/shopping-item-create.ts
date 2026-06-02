@@ -39,7 +39,9 @@ export async function shoppingItemCreateHandler(
 ): Promise<CallToolResult> {
   if (!args.item && !args.items) {
     return {
-      content: [{ type: "text", text: "shopping_item_create: provide `item` (single) or `items` (bulk)" }],
+      content: [
+        { type: "text", text: "shopping_item_create: provide `item` (single) or `items` (bulk)" },
+      ],
       isError: true,
     };
   }

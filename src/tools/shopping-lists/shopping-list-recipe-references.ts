@@ -53,7 +53,11 @@ export async function recipeReferencesHandler(
     const updated = await dispatch(client, args, args.recipeId);
     return jsonResult(projectShoppingList(updated, "concise"));
   } catch (error) {
-    return errorResult(error, "shopping_list_recipe_references", "Failed to update recipe references");
+    return errorResult(
+      error,
+      "shopping_list_recipe_references",
+      "Failed to update recipe references",
+    );
   }
 }
 

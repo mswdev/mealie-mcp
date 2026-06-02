@@ -39,7 +39,12 @@ export async function shoppingItemDeleteHandler(
   if (unconfirmed) return unconfirmed;
   if (!args.itemId && !args.itemIds) {
     return {
-      content: [{ type: "text", text: "shopping_item_delete: provide `itemId` (single) or `itemIds` (bulk)" }],
+      content: [
+        {
+          type: "text",
+          text: "shopping_item_delete: provide `itemId` (single) or `itemIds` (bulk)",
+        },
+      ],
       isError: true,
     };
   }

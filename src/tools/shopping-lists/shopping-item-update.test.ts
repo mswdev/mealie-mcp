@@ -22,9 +22,15 @@ describe("shoppingItemUpdateHandler", () => {
   it("single: fetch-merges changes and PUTs to the item path", async () => {
     const client = fakeClient({ id: "i1", shoppingListId: "L1", display: "eggs", checked: false });
 
-    const result = await shoppingItemUpdateHandler(client, { itemId: "i1", changes: { checked: true } });
+    const result = await shoppingItemUpdateHandler(client, {
+      itemId: "i1",
+      changes: { checked: true },
+    });
 
-    expect(client.calls[0]).toMatchObject({ method: "GET", path: "/api/households/shopping/items/i1" });
+    expect(client.calls[0]).toMatchObject({
+      method: "GET",
+      path: "/api/households/shopping/items/i1",
+    });
     const put = client.calls[1];
     expect(put).toMatchObject({ method: "PUT", path: "/api/households/shopping/items/i1" });
     expect((put?.body as { checked: boolean }).checked).toBe(true);
@@ -38,7 +44,10 @@ describe("shoppingItemUpdateHandler", () => {
 
     await shoppingItemUpdateHandler(client, { items });
 
-    expect(client.calls[0]).toMatchObject({ method: "PUT", path: "/api/households/shopping/items" });
+    expect(client.calls[0]).toMatchObject({
+      method: "PUT",
+      path: "/api/households/shopping/items",
+    });
     expect(client.calls[0]?.body).toEqual(items);
   });
 

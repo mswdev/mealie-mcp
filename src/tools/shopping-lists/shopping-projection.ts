@@ -8,7 +8,16 @@ export type ShoppingItem = components["schemas"]["ShoppingListItemOut-Output"];
 export type ItemsCollection = components["schemas"]["ShoppingListItemsCollectionOut"];
 
 /** Lightweight fields kept per item in the concise list projection. */
-const ITEM_CONCISE = ["id", "display", "quantity", "checked", "note", "foodId", "unitId", "labelId"] as const;
+const ITEM_CONCISE = [
+  "id",
+  "display",
+  "quantity",
+  "checked",
+  "note",
+  "foodId",
+  "unitId",
+  "labelId",
+] as const;
 
 /** Projects one shopping item to a concise view. */
 function projectItem(item: Record<string, unknown>): Record<string, unknown> {

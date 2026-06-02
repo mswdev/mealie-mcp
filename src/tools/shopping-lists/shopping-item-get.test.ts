@@ -23,7 +23,10 @@ describe("shoppingItemGetHandler", () => {
 
     await shoppingItemGetHandler(fakeClient(captured), {});
 
-    expect(captured[0]).toEqual({ method: "GET_PAGINATED", path: "/api/households/shopping/items" });
+    expect(captured[0]).toEqual({
+      method: "GET_PAGINATED",
+      path: "/api/households/shopping/items",
+    });
   });
 
   it("gets one item by id", async () => {

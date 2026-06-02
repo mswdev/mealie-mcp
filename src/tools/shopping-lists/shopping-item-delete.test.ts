@@ -25,7 +25,10 @@ describe("shoppingItemDeleteHandler", () => {
   it("single: deletes via the item path", async () => {
     const captured: Captured[] = [];
 
-    const result = await shoppingItemDeleteHandler(fakeClient(captured), { itemId: "i1", confirm: true });
+    const result = await shoppingItemDeleteHandler(fakeClient(captured), {
+      itemId: "i1",
+      confirm: true,
+    });
 
     expect(captured[0]?.path).toBe("/api/households/shopping/items/i1");
     const body = JSON.parse((result.content[0] as { text: string }).text);

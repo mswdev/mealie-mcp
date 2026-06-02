@@ -7,7 +7,12 @@ function fakeClient(captured: Captured[]) {
   return {
     async post<T>(path: string, body: unknown): Promise<T> {
       captured.push({ path, body });
-      return { id: "L1", name: (body as { name: string }).name, listItems: [], recipeReferences: [] } as T;
+      return {
+        id: "L1",
+        name: (body as { name: string }).name,
+        listItems: [],
+        recipeReferences: [],
+      } as T;
     },
   };
 }

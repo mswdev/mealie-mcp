@@ -10,7 +10,17 @@ describe("projectShoppingList", () => {
       userId: "u",
       householdId: "h",
       listItems: [
-        { id: "i1", display: "2 eggs", quantity: 2, checked: false, note: "", foodId: "f", unitId: "un", labelId: "l", extras: { huge: true } },
+        {
+          id: "i1",
+          display: "2 eggs",
+          quantity: 2,
+          checked: false,
+          note: "",
+          foodId: "f",
+          unitId: "un",
+          labelId: "l",
+          extras: { huge: true },
+        },
       ],
       recipeReferences: [{ recipeId: "r1", recipeQuantity: 1 }],
       labelSettings: [],
@@ -23,7 +33,16 @@ describe("projectShoppingList", () => {
       name: "Groceries",
       itemCount: 1,
       items: [
-        { id: "i1", display: "2 eggs", quantity: 2, checked: false, note: "", foodId: "f", unitId: "un", labelId: "l" },
+        {
+          id: "i1",
+          display: "2 eggs",
+          quantity: 2,
+          checked: false,
+          note: "",
+          foodId: "f",
+          unitId: "un",
+          labelId: "l",
+        },
       ],
       recipeReferences: [{ recipeId: "r1" }],
     });

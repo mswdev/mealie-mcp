@@ -2,12 +2,12 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import * as z from "zod";
 import type { MealieClient } from "../../client/MealieClient.js";
+import { errorResult, jsonResult } from "../result.js";
 import {
   type ItemsCollection,
   type ShoppingItem,
   projectItemsCollection,
 } from "./shopping-projection.js";
-import { errorResult, jsonResult } from "../result.js";
 
 /** Minimal client surface the handler needs (eases test fakes). */
 type UpdateClient = Pick<MealieClient, "get" | "put">;
@@ -45,7 +45,9 @@ export async function shoppingItemUpdateHandler(
   if (args.items) return bulkUpdate(client, args.items);
   if (!args.itemId) {
     return {
-      content: [{ type: "text", text: "shopping_item_update: provide `itemId` (single) or `items` (bulk)" }],
+      content: [
+        { type: "text", text: "shopping_item_update: provide `itemId` (single) or `items` (bulk)" },
+      ],
       isError: true,
     };
   }

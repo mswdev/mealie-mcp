@@ -27,7 +27,10 @@ describe("shoppingItemCreateHandler", () => {
 
   it("bulk → POST /items/create-bulk", async () => {
     const captured: Captured[] = [];
-    const items = [{ shoppingListId: "L1", display: "a" }, { shoppingListId: "L1", display: "b" }];
+    const items = [
+      { shoppingListId: "L1", display: "a" },
+      { shoppingListId: "L1", display: "b" },
+    ];
 
     await shoppingItemCreateHandler(fakeClient(captured), { items });
 

@@ -29,9 +29,15 @@ describe("shoppingListUpdateHandler", () => {
       recipeReferences: [],
     });
 
-    const result = await shoppingListUpdateHandler(client, { listId: "L1", changes: { name: "New" } });
+    const result = await shoppingListUpdateHandler(client, {
+      listId: "L1",
+      changes: { name: "New" },
+    });
 
-    expect(client.calls[0]).toMatchObject({ method: "GET", path: "/api/households/shopping/lists/L1" });
+    expect(client.calls[0]).toMatchObject({
+      method: "GET",
+      path: "/api/households/shopping/lists/L1",
+    });
     const put = client.calls[1];
     expect(put).toMatchObject({ method: "PUT", path: "/api/households/shopping/lists/L1" });
     const body = put?.body as Record<string, unknown>;
