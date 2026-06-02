@@ -716,7 +716,7 @@ Annotations `{ readOnlyHint: false, idempotentHint: true, openWorldHint: true }`
 
 **Spec:** Tool `mealplan_rule_write`, title "Write Meal Plan Rule". `inputSchema`: `action: z.enum(["create","update","delete"])`, `ruleId?` (uuid, update/delete), `day?` (`z.enum(PLAN_RULES_DAY)` — exact members from B0), `entryType?` (`z.enum(PLAN_RULES_TYPE)` — includes `unset`), `queryFilterString?`, `confirm?` (delete). Routing mirrors recipe-comment-write:
 - `create` → `client.post("/api/households/mealplans/rules", body)` where `body: components["schemas"]["PlanRulesCreate"] = { day, entryType, queryFilterString: queryFilterString ?? "" }` (require `day` + `entryType`, else `missing`).
-- `update` → require `ruleId`; `client.put(\`.../rules/${ruleId}\`, body)` (same PlanRulesCreate shape).
+- `update` → require `ruleId`; **fetch-merge** (the PUT is a full replace of `PlanRulesCreate`, so GET the current `PlanRulesOut` and overlay only the provided `day`/`entryType`/`queryFilterString` — building from scratch would silently reset omitted fields to `unset`/`""`). Add `"get"` to the client `Pick`. Test that a single-field update preserves the other two.
 - `delete` → `requireConfirmation` then `client.delete(\`.../rules/${ruleId}\`)` → `{ deleted: ruleId }`.
 
 Echo created/updated rule via `jsonResult` (PlanRulesOut returned directly). Destructive annotations.

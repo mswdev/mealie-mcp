@@ -5,9 +5,10 @@ import type { MealieClient } from "../../client/MealieClient.js";
 import type { components } from "../../types/mealie.js";
 import { requireConfirmation } from "../confirm.js";
 import { errorResult, jsonResult } from "../result.js";
+import type { PlanRule } from "./mealplan-projection.js";
 
 /** Minimal client surface the handler needs (eases test fakes). */
-type RuleWriteClient = Pick<MealieClient, "post" | "put" | "delete">;
+type RuleWriteClient = Pick<MealieClient, "get" | "post" | "put" | "delete">;
 
 /** Must match components["schemas"]["PlanRulesDay"] exactly. */
 const RULE_DAYS = [
@@ -76,7 +77,7 @@ export async function mealplanRuleWriteHandler(
   }
 }
 
-/** Builds the PlanRulesCreate body shared by create and update. */
+/** Builds a fresh PlanRulesCreate body (create has nothing to merge onto). */
 function buildBody(args: RuleWriteArgs): components["schemas"]["PlanRulesCreate"] {
   return {
     day: args.day ?? "unset",
@@ -90,12 +91,21 @@ async function create(client: RuleWriteClient, args: RuleWriteArgs): Promise<Cal
   return jsonResult(await client.post("/api/households/mealplans/rules", buildBody(args)));
 }
 
-/** PUT an edited rule. */
+/**
+ * PUT an edited rule. The endpoint takes the full PlanRulesCreate (replace, not
+ * patch), so we fetch the current rule and overlay only the provided fields —
+ * otherwise an omitted day/entryType/queryFilterString would be silently reset.
+ */
 async function update(client: RuleWriteClient, args: RuleWriteArgs): Promise<CallToolResult> {
   if (!args.ruleId) return missing("ruleId");
-  return jsonResult(
-    await client.put(`/api/households/mealplans/rules/${args.ruleId}`, buildBody(args)),
-  );
+  const path = `/api/households/mealplans/rules/${args.ruleId}`;
+  const current = await client.get<PlanRule>(path);
+  const body: components["schemas"]["PlanRulesCreate"] = {
+    day: args.day ?? current.day,
+    entryType: args.entryType ?? current.entryType,
+    queryFilterString: args.queryFilterString ?? current.queryFilterString,
+  };
+  return jsonResult(await client.put(path, body));
 }
 
 /** DELETE a rule (confirm-gated). */

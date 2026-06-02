@@ -3,10 +3,24 @@ import { mealplanRuleWriteHandler } from "./mealplan-rule-write.js";
 
 type Call = { method: string; path: string; body?: unknown };
 
+/** Current rule the fake returns from get() (used by the fetch-merge in update). */
+const CURRENT_RULE = {
+  id: "rule-1",
+  day: "monday",
+  entryType: "dinner",
+  queryFilterString: "tags.name = quick",
+  groupId: "g",
+  householdId: "h",
+};
+
 function fakeClient() {
   const calls: Call[] = [];
   return {
     calls,
+    async get<T>(path: string): Promise<T> {
+      calls.push({ method: "GET", path });
+      return CURRENT_RULE as T;
+    },
     async post<T>(path: string, body: unknown): Promise<T> {
       calls.push({ method: "POST", path, body });
       return { id: "rule-1" } as T;
@@ -23,7 +37,7 @@ function fakeClient() {
 }
 
 describe("mealplanRuleWriteHandler", () => {
-  it("create posts a PlanRulesCreate body with defaults for unset fields", async () => {
+  it("create posts a fresh PlanRulesCreate body with defaults for unset fields", async () => {
     const client = fakeClient();
 
     await mealplanRuleWriteHandler(client, {
@@ -43,14 +57,27 @@ describe("mealplanRuleWriteHandler", () => {
     });
   });
 
-  it("update puts to the rule path", async () => {
+  it("update fetch-merges: a partial update preserves the untouched fetched fields", async () => {
     const client = fakeClient();
 
-    await mealplanRuleWriteHandler(client, { action: "update", ruleId: "rule-1", day: "friday" });
+    await mealplanRuleWriteHandler(client, {
+      action: "update",
+      ruleId: "rule-1",
+      queryFilterString: "tags.name = slow",
+    });
 
+    // fetches current before PUT
     expect(client.calls[0]).toMatchObject({
-      method: "PUT",
+      method: "GET",
       path: "/api/households/mealplans/rules/rule-1",
+    });
+    const put = client.calls[1];
+    expect(put).toMatchObject({ method: "PUT", path: "/api/households/mealplans/rules/rule-1" });
+    // only queryFilterString changed; day/entryType retained from the fetched rule (not reset to unset)
+    expect(put?.body).toEqual({
+      day: "monday",
+      entryType: "dinner",
+      queryFilterString: "tags.name = slow",
     });
   });
 
@@ -60,14 +87,18 @@ describe("mealplanRuleWriteHandler", () => {
     expect(result.isError).toBe(true);
   });
 
-  it("delete refuses without confirm and deletes with confirm", async () => {
-    const noConfirm = await mealplanRuleWriteHandler(fakeClient(), {
-      action: "delete",
-      ruleId: "rule-1",
-    });
-    expect(noConfirm.isError).toBe(true);
-
+  it("delete refuses without confirm and does not touch the client", async () => {
     const client = fakeClient();
+
+    const result = await mealplanRuleWriteHandler(client, { action: "delete", ruleId: "rule-1" });
+
+    expect(result.isError).toBe(true);
+    expect(client.calls).toHaveLength(0);
+  });
+
+  it("delete removes the rule when confirm is true", async () => {
+    const client = fakeClient();
+
     const result = await mealplanRuleWriteHandler(client, {
       action: "delete",
       ruleId: "rule-1",
