@@ -42,12 +42,20 @@ describe("appGetInfoHandler", () => {
     expect(body.theme).toEqual({ lightPrimary: "#fff" });
   });
 
-  it("fetches only the requested section", async () => {
+  it("fetches only theme when requested alone", async () => {
     const paths: string[] = [];
 
     await appGetInfoHandler(fakeClient(paths), { include: ["theme"] });
 
     expect(paths).toEqual(["/api/app/about", "/api/app/about/theme"]);
+  });
+
+  it("fetches only startup_info when requested alone", async () => {
+    const paths: string[] = [];
+
+    await appGetInfoHandler(fakeClient(paths), { include: ["startup_info"] });
+
+    expect(paths).toEqual(["/api/app/about", "/api/app/about/startup-info"]);
   });
 
   it("returns an error result when the client throws", async () => {
