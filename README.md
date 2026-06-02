@@ -65,6 +65,24 @@ The cookbooks domain (5 tools). A cookbook is a saved filter over recipes:
 
 > All three domains are **default-enabled**. In Mealie they live under `/api/households/`; this server groups them by semantic domain (`mealplan_*`, `shopping_*`, `cookbook_*`). Their write tools are hidden when `MEALIE_READ_ONLY` is set, and every delete requires `confirm: true`.
 
+## Organizer Tools
+
+The organizers domain (5 tools) covers the three parallel recipe taxonomies — **categories, tags, and tools** — behind a single `type: category | tag | tool` discriminator:
+
+- **Read:** `organizer_search` (paginated; `empty_only: true` lists those with no recipes — categories/tags only), `organizer_get` (by id, or by slug with `by_slug: true`)
+- **Write:** `organizer_create`, `organizer_update`, `organizer_delete`
+
+> To list the recipes carrying an organizer, use `recipe_search` with `categories` / `tags` / `tools`. Organizers are the shared taxonomy recipes reference, so these reads resolve a name to the id those filters expect.
+
+## Food & Unit Tools
+
+The foods/units domain (12 tools) covers the ingredient catalog primitives — **foods** and **units** — as separate namespaces:
+
+- **Read:** `food_search`, `food_get`, `unit_search`, `unit_get`
+- **Write:** `food_create`, `food_update`, `food_merge`, `food_delete`, `unit_create`, `unit_update`, `unit_merge`, `unit_delete`
+
+> `food_search` / `unit_search` resolve an ingredient or unit name to the id that recipe ingredients and shopping items reference. `food_merge` / `unit_merge` combine one entry into another (the source is removed) — destructive, so they require `confirm: true`, as do the deletes. Both domains are **default-enabled**; updates are full-replace PUTs done as fetch-merge so untouched fields are preserved.
+
 ## Usage with MCP Clients
 
 ### Claude Desktop
