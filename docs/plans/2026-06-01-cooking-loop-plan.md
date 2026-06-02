@@ -49,7 +49,7 @@ The recipes domain already contains proven archetypes. To avoid duplicating ~1,4
 
 Run: `grep -nE '"(CreateCookBook|UpdateCookBook|ReadCookBook|CookBookPagination)":' src/types/mealie.ts`
 
-Then `Read` each definition (use the line numbers). **Verify:** `CreateCookBook` has `name`, `description`, `slug?`, `position`, `public`, `queryFilterString` (all but `slug` required-with-default); `UpdateCookBook` adds `id`, `groupId`, `householdId`; `ReadCookBook` is the full output. No code/commit this task — verification only.
+Then `Read` each definition (use the line numbers). **Verify:** `CreateCookBook` has `name`, `description`, `slug?`, `position`, `public`, `queryFilterString` — **all but `slug` appear in the schema's `required` array (openapi-typescript keys optionality off `required`, not `default`), so the typed body literal in A4 MUST provide `description`, `public`, `position`, and `queryFilterString` or typecheck fails with TS2741**; `UpdateCookBook` adds `id`, `groupId`, `householdId`; `ReadCookBook` is the full output. No code/commit this task — verification only.
 
 ---
 
@@ -124,11 +124,11 @@ export function projectCookbook(
 
 **Spec:**
 - Tool `cookbook_search`, title "Search Cookbooks", desc "Search and filter cookbooks with pagination. Returns concise summaries.".
-- `inputSchema`: `search?`, `page?`, `perPage?` (max 100, default 20 via `DEFAULT_PER_PAGE`/`MAX_PER_PAGE` consts), `orderBy?`, `orderDirection?` (`z.enum(["asc","desc"])`). Mirror recipe-search's pagination block; drop the recipe-specific `categories/tags/tools/foods`.
+- `inputSchema`: `queryFilter?` (string — Mealie filter expression; the endpoint has **no** full-text `search` param), `page?`, `perPage?` (max 100, default 20 via `DEFAULT_PER_PAGE`/`MAX_PER_PAGE` consts), `orderBy?`, `orderDirection?` (`z.enum(["asc","desc"])`). Mirror recipe-search's pagination block; drop the recipe-specific `categories/tags/tools/foods`. (Verified query params: `orderBy/orderByNullPosition/orderDirection/queryFilter/page/perPage` — no `search`.)
 - Handler: `client.getPaginated<components["schemas"]["ReadCookBook"]>("/api/households/cookbooks", { ...args, perPage: args.perPage ?? DEFAULT_PER_PAGE })`. Project each item to `{ id, slug, name }` + pagination meta (copy recipe-search's `toConcise`).
 - Annotations: `{ readOnlyHint: true, idempotentHint: true, openWorldHint: true }`.
 
-**Tests:** maps `perPage` default; passes `search`; returns `{items, total, page, perPage, totalPages}`; `isError` on client throw. Use the same fake-client shape as `recipe-search.test.ts`.
+**Tests:** maps `perPage` default; passes `queryFilter`; returns `{items, total, page, perPage, totalPages}`; `isError` on client throw. Use the same fake-client shape as `recipe-search.test.ts`.
 
 Steps: write failing test → run FAIL → implement → run PASS → `npx biome check --write src/` → commit `feat(cookbooks): add cookbook_search`.
 
@@ -167,10 +167,14 @@ import { type CookbookDetail, projectCookbook } from "./cookbook-projection.js";
 
 type CreateClient = Pick<MealieClient, "post">;
 
+/** Default ordering position Mealie assigns a new cookbook. */
+const DEFAULT_COOKBOOK_POSITION = 1;
+
 const inputSchema = {
   name: z.string().min(1).describe("Name of the new cookbook"),
   description: z.string().optional().describe("Optional description"),
   public: z.boolean().optional().describe("Whether the cookbook is publicly visible (default false)"),
+  position: z.number().int().optional().describe("Ordering position (default 1)"),
   queryFilterString: z
     .string()
     .optional()
@@ -181,12 +185,14 @@ type CreateArgs = {
   name: string;
   description?: string | undefined;
   public?: boolean | undefined;
+  position?: number | undefined;
   queryFilterString?: string | undefined;
 };
 
 /**
  * Handles cookbook_create: creates a cookbook. Mealie's CreateCookBook marks
- * description/public/queryFilterString required-with-default, so the handler
+ * description/public/position/queryFilterString required-with-default (they are
+ * in the schema's `required` array despite having defaults), so the handler
  * supplies safe defaults for any the caller omits.
  *
  * @param client - A MealieClient (or compatible fake)
@@ -202,6 +208,7 @@ export async function cookbookCreateHandler(
       name: args.name,
       description: args.description ?? "",
       public: args.public ?? false,
+      position: args.position ?? DEFAULT_COOKBOOK_POSITION,
       queryFilterString: args.queryFilterString ?? "",
     };
     const created = await client.post<CookbookDetail>("/api/households/cookbooks", body);
@@ -676,13 +683,15 @@ export function registerMealplanCreate(server: McpServer, client: MealieClient):
 
 **Files:** Create `mealplan-update.ts` + `.test.ts`. **Archetype:** `recipe-update.ts`.
 
-**Spec:** Tool `mealplan_update`. `inputSchema`: `planId: z.number().int().positive()`, `changes: z.record(z.unknown())`. Handler (fetch-merge, drop read-only-only fields): GET `ReadPlanEntry` at `/api/households/mealplans/{planId}`, build merged then **strip `householdId` and `recipe`** before PUT (UpdatePlanEntry omits them):
+**Spec:** Tool `mealplan_update`. `inputSchema`: `planId: z.number().int().positive()`, `changes: z.record(z.unknown())`. Handler (fetch-merge, drop read-only-only fields): GET `ReadPlanEntry` at `/api/households/mealplans/{planId}`, build merged then **strip `householdId` and `recipe`** before PUT (UpdatePlanEntry omits them; use `delete` rather than a destructuring discard, which would leave unused bindings that can trip Biome's `noUnusedVariables`):
 
 ```typescript
 const path = `/api/households/mealplans/${args.planId}`;
 const current = await client.get<PlanEntry>(path);
-const { householdId: _h, recipe: _r, ...rest } = { ...(current as Record<string, unknown>), ...args.changes };
-await client.put(path, rest);
+const merged = { ...(current as Record<string, unknown>), ...args.changes };
+delete merged.householdId;
+delete merged.recipe;
+await client.put(path, merged);
 const updated = await client.get<PlanEntry>(path);
 return jsonResult(projectPlanEntry(updated, "concise"));
 ```
@@ -1019,7 +1028,7 @@ export function registerRecipeReferences(server: McpServer, client: MealieClient
 
 **Files:** Create `shopping-item-create.ts` + `.test.ts`.
 
-**Spec:** Tool `shopping_item_create`. `inputSchema`: `item?: z.record(z.unknown())` (single) **or** `items?: z.array(z.record(z.unknown()))` (bulk); both objects must carry `shoppingListId` + `display` (+ optional food/unit/quantity/note/checked/position). Handler:
+**Spec:** Tool `shopping_item_create`. `inputSchema`: `item?: z.record(z.unknown())` (single) **or** `items?: z.array(z.record(z.unknown()))` (bulk); both objects must carry `shoppingListId` + `display` (+ optional food/unit/quantity/note/checked/position). Since `z.record` is freeform (no fetch-merge to lean on for a create), the **tool description must explicitly name the required fields** (`shoppingListId`, `display`) and the common optional ones, so the calling agent knows the shape — e.g. "Each item requires `shoppingListId` and `display` (the rendered text); optionally `quantity`, `note`, `foodId`, `unitId`, `labelId`, `checked`, `position`." Handler:
 - if `items` → `client.post<ItemsCollection>("/api/households/shopping/items/create-bulk", items)`.
 - else if `item` → `client.post<ItemsCollection>("/api/households/shopping/items", item)`.
 - else → `isError` "provide `item` or `items`".
