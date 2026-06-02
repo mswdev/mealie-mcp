@@ -37,6 +37,19 @@ describe("foodMergeHandler", () => {
     expect(body).toEqual({ message: "ok" });
   });
 
+  it("synthesizes a confirmation when the merge returns no body", async () => {
+    const client = {
+      async put<T>(): Promise<T> {
+        return undefined as T;
+      },
+    };
+
+    const result = await foodMergeHandler(client, { fromFood: "a", toFood: "b", confirm: true });
+
+    const body = JSON.parse((result.content[0] as { text: string }).text);
+    expect(body).toEqual({ merged: { from: "a", to: "b" } });
+  });
+
   it("returns an error result when the client throws", async () => {
     const client = {
       async put<T>(): Promise<T> {

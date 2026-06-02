@@ -4,7 +4,7 @@ import * as z from "zod";
 import type { MealieClient } from "../../client/MealieClient.js";
 import type { PaginatedResult } from "../../client/pagination.js";
 import { errorResult, jsonResult } from "../result.js";
-import { type UnitDetail, projectUnit } from "./unit-projection.js";
+import type { UnitDetail } from "./unit-projection.js";
 
 /** Default page size — modest, never unbounded (design §1.3). */
 const DEFAULT_PER_PAGE = 20;
@@ -58,10 +58,14 @@ export async function unitSearchHandler(
   }
 }
 
-/** Projects a unit page to concise items plus pagination meta. */
+/** Projects a unit page to slim search items (id/name/abbreviation) plus pagination meta. */
 function toConcise(page: PaginatedResult<UnitDetail>): Record<string, unknown> {
   return {
-    items: page.items.map((unit) => projectUnit(unit, "concise")),
+    items: page.items.map((unit) => ({
+      id: unit.id,
+      name: unit.name,
+      abbreviation: unit.abbreviation,
+    })),
     total: page.total,
     page: page.page,
     perPage: page.perPage,

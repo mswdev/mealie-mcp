@@ -49,7 +49,11 @@ export async function organizerCreateHandler(
   }
 }
 
-/** Builds the per-type create body (tool diverges with householdsWithTool). */
+/**
+ * Builds the per-type create body. tool diverges with householdsWithTool;
+ * category and tag share the byte-identical `{ name }` schema (CategoryIn ≡ TagIn),
+ * so CategoryIn is used intentionally for both rather than branching twice.
+ */
 function buildBody(args: CreateArgs): unknown {
   if (args.type === "tool") {
     const body: components["schemas"]["RecipeToolCreate"] = {

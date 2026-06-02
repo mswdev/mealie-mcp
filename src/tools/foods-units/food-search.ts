@@ -4,7 +4,7 @@ import * as z from "zod";
 import type { MealieClient } from "../../client/MealieClient.js";
 import type { PaginatedResult } from "../../client/pagination.js";
 import { errorResult, jsonResult } from "../result.js";
-import { type FoodDetail, projectFood } from "./food-projection.js";
+import type { FoodDetail } from "./food-projection.js";
 
 /** Default page size — modest, never unbounded (design §1.3). */
 const DEFAULT_PER_PAGE = 20;
@@ -58,10 +58,10 @@ export async function foodSearchHandler(
   }
 }
 
-/** Projects a food page to concise items plus pagination meta. */
+/** Projects a food page to slim search items (id/name/labelId) plus pagination meta. */
 function toConcise(page: PaginatedResult<FoodDetail>): Record<string, unknown> {
   return {
-    items: page.items.map((food) => projectFood(food, "concise")),
+    items: page.items.map((food) => ({ id: food.id, name: food.name, labelId: food.labelId })),
     total: page.total,
     page: page.page,
     perPage: page.perPage,

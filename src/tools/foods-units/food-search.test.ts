@@ -27,10 +27,8 @@ describe("foodSearchHandler", () => {
     expect(captured[0]?.path).toBe("/api/foods");
     expect(captured[0]?.query).toMatchObject({ search: "flo", perPage: 20 });
     const body = JSON.parse((result.content[0] as { text: string }).text);
-    expect(body.items).toEqual([
-      { id: "f1", name: "Flour", pluralName: undefined, description: undefined, labelId: "l1" },
-    ]);
-    expect(body.total).toBe(1);
+    expect(body.items).toEqual([{ id: "f1", name: "Flour", labelId: "l1" }]);
+    expect(body).toMatchObject({ total: 1, page: 1, perPage: 20, totalPages: 1 });
   });
 
   it("returns an error result when the client throws", async () => {
