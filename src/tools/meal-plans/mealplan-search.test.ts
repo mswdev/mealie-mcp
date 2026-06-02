@@ -6,7 +6,9 @@ type Captured = { path: string; query?: Record<string, unknown> | undefined };
 
 function fakeClient(captured: Captured[]) {
   const page: PaginatedResult<unknown> = {
-    items: [{ id: 7, date: "2026-06-02", entryType: "dinner", title: "Pasta", text: "", recipeId: "r1" }],
+    items: [
+      { id: 7, date: "2026-06-02", entryType: "dinner", title: "Pasta", text: "", recipeId: "r1" },
+    ],
     total: 1,
     page: 1,
     perPage: 20,

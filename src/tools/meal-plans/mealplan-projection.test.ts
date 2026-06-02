@@ -30,7 +30,14 @@ describe("projectPlanEntry", () => {
   });
 
   it("omits the recipe key when there is no recipe", () => {
-    const full = { id: 8, date: "2026-06-03", entryType: "lunch", title: "", text: "", recipe: null };
+    const full = {
+      id: 8,
+      date: "2026-06-03",
+      entryType: "lunch",
+      title: "",
+      text: "",
+      recipe: null,
+    };
 
     const concise = projectPlanEntry(full as never, "concise");
 

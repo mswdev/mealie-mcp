@@ -24,8 +24,9 @@ type UpdateArgs = {
 
 /**
  * Handles mealplan_update: fetches the current entry, merges the requested
- * changes, drops the read-only-only fields (householdId, recipe) that the
- * UpdatePlanEntry schema does not accept, then PUTs the merged object.
+ * changes, then PUTs the full merged object (as recipe_update does). Mealie's
+ * UpdatePlanEntry ignores the extra read-only fields (householdId, recipe) that
+ * the fetched entry carries — Pydantic drops unknown fields by default.
  *
  * @param client - A MealieClient (or compatible fake)
  * @param args - Validated arguments (planId, changes)
@@ -39,8 +40,6 @@ export async function mealplanUpdateHandler(
     const path = `/api/households/mealplans/${args.planId}`;
     const current = await client.get<PlanEntry>(path);
     const merged = { ...(current as Record<string, unknown>), ...args.changes };
-    delete merged.householdId;
-    delete merged.recipe;
     await client.put(path, merged);
     const updated = await client.get<PlanEntry>(path);
     return jsonResult(projectPlanEntry(updated, "concise"));

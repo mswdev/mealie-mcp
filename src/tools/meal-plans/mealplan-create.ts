@@ -16,7 +16,9 @@ const inputSchema = {
   mode: z
     .enum(["entry", "random"])
     .optional()
-    .describe("entry (explicit, default) or random (Mealie picks a recipe per the household's rules)"),
+    .describe(
+      "entry (explicit, default) or random (Mealie picks a recipe per the household's rules)",
+    ),
   date: z.string().describe("Date for the meal (YYYY-MM-DD)"),
   entryType: z.enum(ENTRY_TYPES).describe("Meal slot"),
   title: z.string().optional().describe("Entry title (entry mode; defaults from the recipe)"),

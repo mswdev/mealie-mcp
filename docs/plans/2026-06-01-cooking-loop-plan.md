@@ -683,14 +683,12 @@ export function registerMealplanCreate(server: McpServer, client: MealieClient):
 
 **Files:** Create `mealplan-update.ts` + `.test.ts`. **Archetype:** `recipe-update.ts`.
 
-**Spec:** Tool `mealplan_update`. `inputSchema`: `planId: z.number().int().positive()`, `changes: z.record(z.unknown())`. Handler (fetch-merge, drop read-only-only fields): GET `ReadPlanEntry` at `/api/households/mealplans/{planId}`, build merged then **strip `householdId` and `recipe`** before PUT (UpdatePlanEntry omits them; use `delete` rather than a destructuring discard, which would leave unused bindings that can trip Biome's `noUnusedVariables`):
+**Spec:** Tool `mealplan_update`. `inputSchema`: `planId: z.number().int().positive()`, `changes: z.record(z.unknown())`. Handler is the **exact recipe_update fetch-merge** — GET `ReadPlanEntry`, shallow-merge `changes`, PUT the full merged object, re-GET, project concise. **No field-stripping:** the original plan stripped `householdId`/`recipe`, but Biome bans both `delete` (`noDelete`) and unused destructure-discards (`noUnusedVariables`), and Mealie's `UpdatePlanEntry` ignores those extra fields anyway (Pydantic drops unknown fields — proven by the shipped recipe_update, which round-trips a full `Recipe-Output`). Matching the archetype is simpler, lint-clean, and consistent.
 
 ```typescript
 const path = `/api/households/mealplans/${args.planId}`;
 const current = await client.get<PlanEntry>(path);
 const merged = { ...(current as Record<string, unknown>), ...args.changes };
-delete merged.householdId;
-delete merged.recipe;
 await client.put(path, merged);
 const updated = await client.get<PlanEntry>(path);
 return jsonResult(projectPlanEntry(updated, "concise"));

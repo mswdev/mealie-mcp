@@ -34,7 +34,10 @@ describe("mealplanGetHandler", () => {
   });
 
   it("returns the whole entry when detailed", async () => {
-    const result = await mealplanGetHandler(fakeClient([]), { planId: 7, response_format: "detailed" });
+    const result = await mealplanGetHandler(fakeClient([]), {
+      planId: 7,
+      response_format: "detailed",
+    });
 
     const body = JSON.parse((result.content[0] as { text: string }).text);
     expect(body).toHaveProperty("householdId");

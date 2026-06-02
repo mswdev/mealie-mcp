@@ -19,7 +19,7 @@ function fakeClient(current: unknown) {
 }
 
 describe("mealplanUpdateHandler", () => {
-  it("merges changes and strips householdId/recipe before the PUT", async () => {
+  it("merges changes onto the current entry and PUTs the full object, then re-fetches", async () => {
     const client = fakeClient({
       id: 7,
       date: "2026-06-02",
@@ -29,7 +29,6 @@ describe("mealplanUpdateHandler", () => {
       groupId: "g",
       userId: "u",
       householdId: "h",
-      recipe: { id: "r1", name: "Pasta" },
     });
 
     await mealplanUpdateHandler(client, { planId: 7, changes: { title: "New" } });
@@ -37,9 +36,9 @@ describe("mealplanUpdateHandler", () => {
     const put = client.calls.find((c) => c.method === "PUT");
     expect(put?.path).toBe("/api/households/mealplans/7");
     const body = put?.body as Record<string, unknown>;
+    // changed field applied, untouched fields preserved (merge, not replace)
     expect(body.title).toBe("New");
-    expect(body).not.toHaveProperty("householdId");
-    expect(body).not.toHaveProperty("recipe");
+    expect(body).toMatchObject({ id: 7, groupId: "g", userId: "u", entryType: "dinner" });
     // re-fetches after the PUT
     expect(client.calls.filter((c) => c.method === "GET")).toHaveLength(2);
   });

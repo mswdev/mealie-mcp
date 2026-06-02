@@ -23,7 +23,10 @@ describe("mealplanRulesHandler", () => {
 
     await mealplanRulesHandler(fakeClient(captured), {});
 
-    expect(captured[0]).toEqual({ method: "GET_PAGINATED", path: "/api/households/mealplans/rules" });
+    expect(captured[0]).toEqual({
+      method: "GET_PAGINATED",
+      path: "/api/households/mealplans/rules",
+    });
   });
 
   it("gets one rule by id", async () => {

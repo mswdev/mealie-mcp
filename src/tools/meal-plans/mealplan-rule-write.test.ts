@@ -26,10 +26,21 @@ describe("mealplanRuleWriteHandler", () => {
   it("create posts a PlanRulesCreate body with defaults for unset fields", async () => {
     const client = fakeClient();
 
-    await mealplanRuleWriteHandler(client, { action: "create", day: "monday", entryType: "dinner" });
+    await mealplanRuleWriteHandler(client, {
+      action: "create",
+      day: "monday",
+      entryType: "dinner",
+    });
 
-    expect(client.calls[0]).toMatchObject({ method: "POST", path: "/api/households/mealplans/rules" });
-    expect(client.calls[0]?.body).toEqual({ day: "monday", entryType: "dinner", queryFilterString: "" });
+    expect(client.calls[0]).toMatchObject({
+      method: "POST",
+      path: "/api/households/mealplans/rules",
+    });
+    expect(client.calls[0]?.body).toEqual({
+      day: "monday",
+      entryType: "dinner",
+      queryFilterString: "",
+    });
   });
 
   it("update puts to the rule path", async () => {
@@ -37,7 +48,10 @@ describe("mealplanRuleWriteHandler", () => {
 
     await mealplanRuleWriteHandler(client, { action: "update", ruleId: "rule-1", day: "friday" });
 
-    expect(client.calls[0]).toMatchObject({ method: "PUT", path: "/api/households/mealplans/rules/rule-1" });
+    expect(client.calls[0]).toMatchObject({
+      method: "PUT",
+      path: "/api/households/mealplans/rules/rule-1",
+    });
   });
 
   it("update without ruleId errors", async () => {
@@ -47,7 +61,10 @@ describe("mealplanRuleWriteHandler", () => {
   });
 
   it("delete refuses without confirm and deletes with confirm", async () => {
-    const noConfirm = await mealplanRuleWriteHandler(fakeClient(), { action: "delete", ruleId: "rule-1" });
+    const noConfirm = await mealplanRuleWriteHandler(fakeClient(), {
+      action: "delete",
+      ruleId: "rule-1",
+    });
     expect(noConfirm.isError).toBe(true);
 
     const client = fakeClient();
@@ -57,7 +74,10 @@ describe("mealplanRuleWriteHandler", () => {
       confirm: true,
     });
 
-    expect(client.calls[0]).toMatchObject({ method: "DELETE", path: "/api/households/mealplans/rules/rule-1" });
+    expect(client.calls[0]).toMatchObject({
+      method: "DELETE",
+      path: "/api/households/mealplans/rules/rule-1",
+    });
     const body = JSON.parse((result.content[0] as { text: string }).text);
     expect(body).toEqual({ deleted: "rule-1" });
   });

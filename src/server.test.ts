@@ -24,6 +24,11 @@ const WRITE_TOOLS = [
   "cookbook_create",
   "cookbook_update",
   "cookbook_delete",
+  // meal plans
+  "mealplan_create",
+  "mealplan_update",
+  "mealplan_delete",
+  "mealplan_rule_write",
 ];
 
 /** A representative set of reads that must always be present. */
@@ -40,6 +45,11 @@ const READ_TOOLS = [
   // cookbooks
   "cookbook_search",
   "cookbook_get",
+  // meal plans
+  "mealplan_search",
+  "mealplan_get",
+  "mealplan_today",
+  "mealplan_rules",
 ];
 
 async function listToolNames(readOnly: boolean): Promise<string[]> {
@@ -58,8 +68,8 @@ describe("read-only switch", () => {
 
     for (const read of READ_TOOLS) expect(names).toContain(read);
     for (const write of WRITE_TOOLS) expect(names).not.toContain(write);
-    // get_about + 9 recipe reads + 2 cookbook reads, no writes
-    expect(names).toHaveLength(12);
+    // get_about + 11 reads (9 recipe + 2 cookbook) + 4 meal-plan reads, no writes
+    expect(names).toHaveLength(16);
   });
 
   it("exposes mutating tools when not read-only", async () => {
@@ -67,7 +77,7 @@ describe("read-only switch", () => {
 
     for (const read of READ_TOOLS) expect(names).toContain(read);
     for (const write of WRITE_TOOLS) expect(names).toContain(write);
-    // get_about + 11 reads (9 recipe + 2 cookbook) + 17 writes (14 recipe + 3 cookbook)
-    expect(names).toHaveLength(29);
+    // get_about + 15 reads (9 recipe + 2 cookbook + 4 meal-plan) + 21 writes (14 recipe + 3 cookbook + 4 meal-plan)
+    expect(names).toHaveLength(37);
   });
 });

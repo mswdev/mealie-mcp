@@ -93,7 +93,9 @@ async function create(client: RuleWriteClient, args: RuleWriteArgs): Promise<Cal
 /** PUT an edited rule. */
 async function update(client: RuleWriteClient, args: RuleWriteArgs): Promise<CallToolResult> {
   if (!args.ruleId) return missing("ruleId");
-  return jsonResult(await client.put(`/api/households/mealplans/rules/${args.ruleId}`, buildBody(args)));
+  return jsonResult(
+    await client.put(`/api/households/mealplans/rules/${args.ruleId}`, buildBody(args)),
+  );
 }
 
 /** DELETE a rule (confirm-gated). */

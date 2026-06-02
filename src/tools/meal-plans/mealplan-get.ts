@@ -9,7 +9,11 @@ import { type PlanEntry, projectPlanEntry } from "./mealplan-projection.js";
 type GetClient = Pick<MealieClient, "get">;
 
 const inputSchema = {
-  planId: z.number().int().positive().describe("Meal plan entry id (an integer, from mealplan_search)"),
+  planId: z
+    .number()
+    .int()
+    .positive()
+    .describe("Meal plan entry id (an integer, from mealplan_search)"),
   response_format: z
     .enum(["concise", "detailed"])
     .optional()
