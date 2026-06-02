@@ -49,8 +49,11 @@ describe("cookbookUpdateHandler", () => {
 
     expect(client.calls[0]).toMatchObject({ method: "PUT", path: "/api/households/cookbooks" });
     expect(client.calls[0]?.body).toEqual(items);
+    // echoes the updated cookbooks concise (the bulk PUT returns ReadCookBook[])
     const body = JSON.parse((result.content[0] as { text: string }).text);
-    expect(body).toEqual({ updated: 2 });
+    expect(body.updated).toHaveLength(2);
+    expect(body.updated.map((c: { id: string }) => c.id)).toEqual(["u1", "u2"]);
+    expect(body.updated[0]).toMatchObject({ id: "u1", name: "A" });
   });
 
   it("errors when neither id nor items is provided", async () => {

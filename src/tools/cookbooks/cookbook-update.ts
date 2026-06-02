@@ -76,8 +76,10 @@ async function bulkUpdate(
   items: Record<string, unknown>[],
 ): Promise<CallToolResult> {
   try {
-    await client.put("/api/households/cookbooks", items);
-    return jsonResult({ updated: items.length });
+    const updated = await client.put<CookbookDetail[]>("/api/households/cookbooks", items);
+    return jsonResult({
+      updated: (updated ?? []).map((cookbook) => projectCookbook(cookbook, "concise")),
+    });
   } catch (error) {
     return errorResult(error, "cookbook_update", "Failed to bulk-update cookbooks");
   }

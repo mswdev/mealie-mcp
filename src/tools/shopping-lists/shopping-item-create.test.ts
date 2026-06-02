@@ -20,7 +20,17 @@ describe("shoppingItemCreateHandler", () => {
     const result = await shoppingItemCreateHandler(fakeClient(captured), { item });
 
     expect(captured[0]?.path).toBe("/api/households/shopping/items");
-    expect(captured[0]?.body).toEqual(item);
+    // single path builds a full ShoppingListItemCreate, filling required-with-default fields
+    expect(captured[0]?.body).toEqual({
+      shoppingListId: "L1",
+      display: "2 eggs",
+      quantity: 2,
+      note: "",
+      checked: false,
+      position: 0,
+      extras: {},
+      recipeReferences: [],
+    });
     const body = JSON.parse((result.content[0] as { text: string }).text);
     expect(body).toEqual({ created: ["i1"], updated: [], deleted: [] });
   });

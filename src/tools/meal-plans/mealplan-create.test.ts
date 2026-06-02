@@ -54,6 +54,20 @@ describe("mealplanCreateHandler", () => {
     expect(captured[0]?.body).toEqual({ date: "2026-06-02", entryType: "dinner" });
   });
 
+  it("random mode rejects recipeId instead of silently dropping it", async () => {
+    const captured: Captured[] = [];
+
+    const result = await mealplanCreateHandler(fakeClient(captured), {
+      mode: "random",
+      date: "2026-06-02",
+      entryType: "dinner",
+      recipeId: "r1",
+    });
+
+    expect(result.isError).toBe(true);
+    expect(captured).toHaveLength(0);
+  });
+
   it("returns an error result when the client throws", async () => {
     const client = {
       async post<T>(): Promise<T> {

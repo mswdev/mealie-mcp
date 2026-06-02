@@ -47,6 +47,17 @@ export async function mealplanCreateHandler(
   client: CreateClient,
   args: CreateArgs,
 ): Promise<CallToolResult> {
+  if (args.mode === "random" && args.recipeId) {
+    return {
+      content: [
+        {
+          type: "text",
+          text: "mealplan_create: mode=random picks a recipe by the household's rules and ignores recipeId. Use mode=entry to schedule a specific recipe.",
+        },
+      ],
+      isError: true,
+    };
+  }
   try {
     const created =
       args.mode === "random" ? await createRandom(client, args) : await createEntry(client, args);
