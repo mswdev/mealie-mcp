@@ -131,30 +131,36 @@ describe("read-only switch", () => {
   });
 });
 
+// Opt-in toolset tools, grown per resource as they land (finalized in the e2e below).
+const AUTOMATION_READS = ["webhook_get", "event_notification_get"];
+const AUTOMATION_WRITES = [
+  "webhook_write",
+  "webhook_action",
+  "event_notification_write",
+  "event_notification_test",
+];
+
 describe("opt-in toolsets", () => {
   const AUTOMATION: ReadonlySet<ToolsetName> = new Set(["automation"]);
 
   it("omits opt-in tools when no toolset is enabled", async () => {
     const names = await listToolNames({ readOnly: false });
 
-    expect(names).not.toContain("webhook_get");
-    expect(names).not.toContain("webhook_write");
-    expect(names).not.toContain("webhook_action");
+    for (const tool of [...AUTOMATION_READS, ...AUTOMATION_WRITES]) {
+      expect(names).not.toContain(tool);
+    }
   });
 
   it("exposes automation reads + writes when the toolset is enabled", async () => {
     const names = await listToolNames({ readOnly: false, toolsets: AUTOMATION });
 
-    expect(names).toContain("webhook_get");
-    expect(names).toContain("webhook_write");
-    expect(names).toContain("webhook_action");
+    for (const tool of [...AUTOMATION_READS, ...AUTOMATION_WRITES]) expect(names).toContain(tool);
   });
 
   it("strips automation writes within an enabled toolset under read-only", async () => {
     const names = await listToolNames({ readOnly: true, toolsets: AUTOMATION });
 
-    expect(names).toContain("webhook_get");
-    expect(names).not.toContain("webhook_write");
-    expect(names).not.toContain("webhook_action");
+    for (const read of AUTOMATION_READS) expect(names).toContain(read);
+    for (const write of AUTOMATION_WRITES) expect(names).not.toContain(write);
   });
 });

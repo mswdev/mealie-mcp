@@ -1,5 +1,8 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { MealieClient } from "../../client/MealieClient.js";
+import { registerEventNotificationGet } from "./event-notification-get.js";
+import { registerEventNotificationTest } from "./event-notification-test.js";
+import { registerEventNotificationWrite } from "./event-notification-write.js";
 import { registerWebhookAction } from "./webhook-action.js";
 import { registerWebhookGet } from "./webhook-get.js";
 import { registerWebhookWrite } from "./webhook-write.js";
@@ -22,8 +25,11 @@ export function registerHouseholdAutomationTools(
   options: RegisterOptions,
 ): void {
   registerWebhookGet(server, client);
+  registerEventNotificationGet(server, client);
 
   if (options.readOnly) return;
   registerWebhookWrite(server, client);
   registerWebhookAction(server, client);
+  registerEventNotificationWrite(server, client);
+  registerEventNotificationTest(server, client);
 }
