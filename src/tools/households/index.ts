@@ -1,5 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { MealieClient } from "../../client/MealieClient.js";
+import { registerHouseholdInvitationsList } from "./household-invitations-list.js";
+import { registerHouseholdInvite } from "./household-invite.js";
 import { registerHouseholdSelfGet } from "./household-self-get.js";
 import { registerHouseholdSelfUpdate } from "./household-self-update.js";
 
@@ -21,7 +23,9 @@ export function registerHouseholdTools(
   options: RegisterOptions,
 ): void {
   registerHouseholdSelfGet(server, client);
+  registerHouseholdInvitationsList(server, client);
 
   if (options.readOnly) return;
   registerHouseholdSelfUpdate(server, client);
+  registerHouseholdInvite(server, client);
 }

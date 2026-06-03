@@ -132,8 +132,8 @@ describe("read-only switch", () => {
 });
 
 // Opt-in toolset tools, grown per resource as they land (finalized in the e2e below).
-const HOUSEHOLDS_READS = ["household_self_get"];
-const HOUSEHOLDS_WRITES = ["household_self_update"];
+const HOUSEHOLDS_READS = ["household_self_get", "household_invitations_list"];
+const HOUSEHOLDS_WRITES = ["household_self_update", "household_invite"];
 const AUTOMATION_READS = ["webhook_get", "event_notification_get", "recipe_action_get"];
 const AUTOMATION_WRITES = [
   "webhook_write",
