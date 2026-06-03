@@ -132,6 +132,8 @@ describe("read-only switch", () => {
 });
 
 // Opt-in toolset tools, grown per resource as they land (finalized in the e2e below).
+const HOUSEHOLDS_READS = ["household_self_get"];
+const HOUSEHOLDS_WRITES = ["household_self_update"];
 const AUTOMATION_READS = ["webhook_get", "event_notification_get", "recipe_action_get"];
 const AUTOMATION_WRITES = [
   "webhook_write",
@@ -142,15 +144,29 @@ const AUTOMATION_WRITES = [
   "recipe_action_trigger",
 ];
 
+const ALL_OPTIN = [
+  ...HOUSEHOLDS_READS,
+  ...HOUSEHOLDS_WRITES,
+  ...AUTOMATION_READS,
+  ...AUTOMATION_WRITES,
+];
+
 describe("opt-in toolsets", () => {
   const AUTOMATION: ReadonlySet<ToolsetName> = new Set(["automation"]);
+  const HOUSEHOLDS: ReadonlySet<ToolsetName> = new Set(["households"]);
 
-  it("omits opt-in tools when no toolset is enabled", async () => {
+  it("omits every opt-in tool when no toolset is enabled", async () => {
     const names = await listToolNames({ readOnly: false });
 
-    for (const tool of [...AUTOMATION_READS, ...AUTOMATION_WRITES]) {
+    for (const tool of ALL_OPTIN) expect(names).not.toContain(tool);
+  });
+
+  it("exposes only the households tools when households is enabled", async () => {
+    const names = await listToolNames({ readOnly: false, toolsets: HOUSEHOLDS });
+
+    for (const tool of [...HOUSEHOLDS_READS, ...HOUSEHOLDS_WRITES]) expect(names).toContain(tool);
+    for (const tool of [...AUTOMATION_READS, ...AUTOMATION_WRITES])
       expect(names).not.toContain(tool);
-    }
   });
 
   it("exposes automation reads + writes when the toolset is enabled", async () => {
@@ -159,10 +175,15 @@ describe("opt-in toolsets", () => {
     for (const tool of [...AUTOMATION_READS, ...AUTOMATION_WRITES]) expect(names).toContain(tool);
   });
 
-  it("strips automation writes within an enabled toolset under read-only", async () => {
-    const names = await listToolNames({ readOnly: true, toolsets: AUTOMATION });
+  it("strips opt-in writes within enabled toolsets under read-only", async () => {
+    const names = await listToolNames({
+      readOnly: true,
+      toolsets: new Set(["households", "automation"]),
+    });
 
-    for (const read of AUTOMATION_READS) expect(names).toContain(read);
-    for (const write of AUTOMATION_WRITES) expect(names).not.toContain(write);
+    for (const read of [...HOUSEHOLDS_READS, ...AUTOMATION_READS]) expect(names).toContain(read);
+    for (const write of [...HOUSEHOLDS_WRITES, ...AUTOMATION_WRITES]) {
+      expect(names).not.toContain(write);
+    }
   });
 });

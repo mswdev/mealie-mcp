@@ -5,6 +5,7 @@ import { registerAppTools } from "./tools/app/index.js";
 import { registerCookbookTools } from "./tools/cookbooks/index.js";
 import { registerFoodsUnitsTools } from "./tools/foods-units/index.js";
 import { registerHouseholdAutomationTools } from "./tools/household-automation/index.js";
+import { registerHouseholdTools } from "./tools/households/index.js";
 import { registerMealPlanTools } from "./tools/meal-plans/index.js";
 import { registerOrganizerTools } from "./tools/organizers/index.js";
 import { registerRecipeTools } from "./tools/recipes/index.js";
@@ -41,6 +42,9 @@ export function createServer(client: MealieClient, options: ServerOptions): McpS
   registerFoodsUnitsTools(server, client, options);
 
   // Opt-in toolsets (off unless named in MEALIE_TOOLSETS); read-only still strips writes within.
+  if (options.toolsets.has("households")) {
+    registerHouseholdTools(server, client, options);
+  }
   if (options.toolsets.has("automation")) {
     registerHouseholdAutomationTools(server, client, options);
   }
