@@ -130,3 +130,31 @@ describe("read-only switch", () => {
     expect(names).toHaveLength(66);
   });
 });
+
+describe("opt-in toolsets", () => {
+  const AUTOMATION: ReadonlySet<ToolsetName> = new Set(["automation"]);
+
+  it("omits opt-in tools when no toolset is enabled", async () => {
+    const names = await listToolNames({ readOnly: false });
+
+    expect(names).not.toContain("webhook_get");
+    expect(names).not.toContain("webhook_write");
+    expect(names).not.toContain("webhook_action");
+  });
+
+  it("exposes automation reads + writes when the toolset is enabled", async () => {
+    const names = await listToolNames({ readOnly: false, toolsets: AUTOMATION });
+
+    expect(names).toContain("webhook_get");
+    expect(names).toContain("webhook_write");
+    expect(names).toContain("webhook_action");
+  });
+
+  it("strips automation writes within an enabled toolset under read-only", async () => {
+    const names = await listToolNames({ readOnly: true, toolsets: AUTOMATION });
+
+    expect(names).toContain("webhook_get");
+    expect(names).not.toContain("webhook_write");
+    expect(names).not.toContain("webhook_action");
+  });
+});
