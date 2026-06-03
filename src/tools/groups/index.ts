@@ -6,8 +6,10 @@ import { registerGroupAiProviderWrite } from "./group-ai-provider-write.js";
 import { registerGroupHouseholdsList } from "./group-households-list.js";
 import { registerGroupReportDelete } from "./group-report-delete.js";
 import { registerGroupReportGet } from "./group-report-get.js";
+import { registerGroupSeed } from "./group-seed.js";
 import { registerGroupSelfGet } from "./group-self-get.js";
 import { registerGroupSelfUpdate } from "./group-self-update.js";
+import { registerGroupStartMigration } from "./group-start-migration.js";
 import { registerLabelGet } from "./label-get.js";
 import { registerLabelWrite } from "./label-write.js";
 
@@ -41,5 +43,7 @@ export function registerGroupTools(
   registerGroupAiProviderWrite(server, client);
   registerGroupAiProviderSettingsUpdate(server, client);
   registerGroupReportDelete(server, client);
+  registerGroupSeed(server, client);
+  registerGroupStartMigration(server, client);
   registerLabelWrite(server, client);
 }
