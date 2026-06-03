@@ -3,6 +3,9 @@ import type { MealieClient } from "../../client/MealieClient.js";
 import { registerEventNotificationGet } from "./event-notification-get.js";
 import { registerEventNotificationTest } from "./event-notification-test.js";
 import { registerEventNotificationWrite } from "./event-notification-write.js";
+import { registerRecipeActionGet } from "./recipe-action-get.js";
+import { registerRecipeActionTrigger } from "./recipe-action-trigger.js";
+import { registerRecipeActionWrite } from "./recipe-action-write.js";
 import { registerWebhookAction } from "./webhook-action.js";
 import { registerWebhookGet } from "./webhook-get.js";
 import { registerWebhookWrite } from "./webhook-write.js";
@@ -26,10 +29,13 @@ export function registerHouseholdAutomationTools(
 ): void {
   registerWebhookGet(server, client);
   registerEventNotificationGet(server, client);
+  registerRecipeActionGet(server, client);
 
   if (options.readOnly) return;
   registerWebhookWrite(server, client);
   registerWebhookAction(server, client);
   registerEventNotificationWrite(server, client);
   registerEventNotificationTest(server, client);
+  registerRecipeActionWrite(server, client);
+  registerRecipeActionTrigger(server, client);
 }

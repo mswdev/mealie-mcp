@@ -132,12 +132,14 @@ describe("read-only switch", () => {
 });
 
 // Opt-in toolset tools, grown per resource as they land (finalized in the e2e below).
-const AUTOMATION_READS = ["webhook_get", "event_notification_get"];
+const AUTOMATION_READS = ["webhook_get", "event_notification_get", "recipe_action_get"];
 const AUTOMATION_WRITES = [
   "webhook_write",
   "webhook_action",
   "event_notification_write",
   "event_notification_test",
+  "recipe_action_write",
+  "recipe_action_trigger",
 ];
 
 describe("opt-in toolsets", () => {
