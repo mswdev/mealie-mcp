@@ -100,6 +100,9 @@ async function members(client: GetClient, args: GetArgs): Promise<CallToolResult
     orderByNullPosition: args.orderByNullPosition,
     queryFilter: args.queryFilter,
   });
+  // Returned as-is: PaginatedResult is already the normalized camelCase envelope, and
+  // UserSummary members are slim (no heavy fields to project) — unlike the *_get reads
+  // which run a concise field projection over a richer resource.
   return jsonResult(page);
 }
 
