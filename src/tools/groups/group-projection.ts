@@ -48,6 +48,34 @@ export function projectHouseholdSummary(
   return concise;
 }
 
+/** An AI provider as returned by Mealie (AIProviderOut never includes apiKey). */
+export type AIProvider = components["schemas"]["AIProviderOut"];
+
+/** Fields kept in a provider's concise projection. Never includes apiKey (a write-only secret). */
+const PROVIDER_CONCISE_FIELDS = ["id", "name", "model", "baseUrl"] as const;
+
+/**
+ * Projects an AI provider to a concise view, or returns it whole when detailed.
+ * The apiKey secret is never present in AIProviderOut and is never re-added here.
+ *
+ * @param provider - The full AIProviderOut object
+ * @param format - "concise" trims to id/name/model/baseUrl; "detailed" returns everything
+ * @returns The projected provider as a plain record
+ */
+export function projectProvider(
+  provider: AIProvider,
+  format: "concise" | "detailed",
+): Record<string, unknown> {
+  const source = provider as unknown as Record<string, unknown>;
+  if (format === "detailed") {
+    // Defensive: never echo a secret even if a stray apiKey is present.
+    return Object.fromEntries(Object.entries(source).filter(([key]) => key !== "apiKey"));
+  }
+  const concise: Record<string, unknown> = {};
+  for (const field of PROVIDER_CONCISE_FIELDS) concise[field] = source[field];
+  return concise;
+}
+
 /** A report summary, as listed by GET /api/groups/reports. */
 export type ReportSummary = components["schemas"]["ReportSummary"];
 

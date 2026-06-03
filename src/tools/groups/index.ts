@@ -1,5 +1,8 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { MealieClient } from "../../client/MealieClient.js";
+import { registerGroupAiProviderGet } from "./group-ai-provider-get.js";
+import { registerGroupAiProviderSettingsUpdate } from "./group-ai-provider-settings-update.js";
+import { registerGroupAiProviderWrite } from "./group-ai-provider-write.js";
 import { registerGroupHouseholdsList } from "./group-households-list.js";
 import { registerGroupReportDelete } from "./group-report-delete.js";
 import { registerGroupReportGet } from "./group-report-get.js";
@@ -28,12 +31,15 @@ export function registerGroupTools(
   // Reads (always on).
   registerGroupSelfGet(server, client);
   registerGroupHouseholdsList(server, client);
+  registerGroupAiProviderGet(server, client);
   registerGroupReportGet(server, client);
   registerLabelGet(server, client);
 
   if (options.readOnly) return;
   // Writes (stripped under read-only).
   registerGroupSelfUpdate(server, client);
+  registerGroupAiProviderWrite(server, client);
+  registerGroupAiProviderSettingsUpdate(server, client);
   registerGroupReportDelete(server, client);
   registerLabelWrite(server, client);
 }
