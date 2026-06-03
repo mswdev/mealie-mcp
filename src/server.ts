@@ -4,6 +4,7 @@ import type { ToolsetName } from "./config.js";
 import { registerAppTools } from "./tools/app/index.js";
 import { registerCookbookTools } from "./tools/cookbooks/index.js";
 import { registerFoodsUnitsTools } from "./tools/foods-units/index.js";
+import { registerGroupTools } from "./tools/groups/index.js";
 import { registerHouseholdAutomationTools } from "./tools/household-automation/index.js";
 import { registerHouseholdTools } from "./tools/households/index.js";
 import { registerMealPlanTools } from "./tools/meal-plans/index.js";
@@ -47,6 +48,9 @@ export function createServer(client: MealieClient, options: ServerOptions): McpS
   }
   if (options.toolsets.has("automation")) {
     registerHouseholdAutomationTools(server, client, options);
+  }
+  if (options.toolsets.has("groups")) {
+    registerGroupTools(server, client, options);
   }
 
   return server;

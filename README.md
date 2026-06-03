@@ -23,7 +23,7 @@ Set these environment variables before running:
 | `TRANSPORT` | No | `stdio` (default) or `http` |
 | `PORT` | No | HTTP port when using `TRANSPORT=http` (default: `3000`) |
 | `MEALIE_READ_ONLY` | No | When `true`/`1`/`yes`/`on`, every mutating tool (create, update, delete, import, bulk actions, etc.) is **not registered** — the server exposes reads only. Default: `false`. |
-| `MEALIE_TOOLSETS` | No | Comma-separated list of **opt-in** toolsets to enable, e.g. `households,automation`. Recognized tokens: `households`, `automation`. Unset → only the default tools. Unknown tokens are logged to stderr and ignored. Composes with `MEALIE_READ_ONLY` (enabled toolsets still have their writes stripped in read-only mode). |
+| `MEALIE_TOOLSETS` | No | Comma-separated list of **opt-in** toolsets to enable, e.g. `households,automation,groups`. Recognized tokens: `households`, `automation`, `groups`. Unset → only the default tools. Unknown tokens are logged to stderr and ignored. Composes with `MEALIE_READ_ONLY` (enabled toolsets still have their writes stripped in read-only mode). |
 
 ## App Tools
 
@@ -112,6 +112,15 @@ Event automation (Mealie's *Webhooks* + *Event Notifications* + *Recipe Actions*
 - **Write:** `webhook_write` / `event_notification_write` / `recipe_action_write` (`action: create | update | delete`; update is fetch-merge, delete is `confirm`-gated), plus the action verbs `webhook_action` (`test` | `rerun`), `event_notification_test`, `recipe_action_trigger`
 
 > The action verbs (test / rerun / trigger) are non-destructive but **hit the network / fire side effects** (a test webhook call, a live Apprise message, running a recipe action), so they are registered as writes and are stripped under `MEALIE_READ_ONLY`.
+
+### `groups` — Group Administration (12 tools)
+
+Group-scoped administration (Mealie's *Self Service*, *Households*, *MultiPurpose Labels*, *AI Providers*, *Reports*, *Seeders*, *Migrations*):
+
+- **Read:** `group_self_get` (a `view` dispatcher: `group` | `members` | `preferences` | `storage`), `group_households_list` (the group's household roster, by slug), `label_get`, `group_ai_provider_get` (one provider by id, or — with no id — the AI settings incl. the provider list), `group_report_get`
+- **Write:** `group_self_update` (preferences fetch-merge), `label_write` (`action: create | update | delete`), `group_ai_provider_write` (`action: create | update | delete`), `group_ai_provider_settings_update`, `group_seed` (`target: foods | labels | units`), `group_start_migration`, `group_report_delete`
+
+> **Labels** live here (`label_*`) and are the resolution target for shopping-list `labelId` — use `label_get` to map a label name to its id. **AI-provider `apiKey` is a write-only secret**: it's required on create *and* update (it can't be read back, so re-supply it every update) and is never returned by any tool. Updates are full-replace PUTs done as fetch-merge. **`group_start_migration`** uploads an archive (multipart) to import recipes from another app — it's destructive (`confirm: true`) and reads a file on the MCP server (stdio/local only); poll progress with `group_report_get`. `group_seed` is additive (it appends to the catalog). Destructive ops (`*_delete`, migration) require `confirm: true`.
 
 ## Usage with MCP Clients
 
