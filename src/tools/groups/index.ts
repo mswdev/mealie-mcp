@@ -1,6 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { MealieClient } from "../../client/MealieClient.js";
 import { registerLabelGet } from "./label-get.js";
+import { registerLabelWrite } from "./label-write.js";
 
 /** Options controlling which group tools are registered. */
 export type RegisterOptions = { readOnly: boolean };
@@ -23,5 +24,6 @@ export function registerGroupTools(
   registerLabelGet(server, client);
 
   if (options.readOnly) return;
-  // Writes (stripped under read-only) — added per task.
+  // Writes (stripped under read-only).
+  registerLabelWrite(server, client);
 }
