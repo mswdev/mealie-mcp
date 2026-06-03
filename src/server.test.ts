@@ -144,16 +144,37 @@ const AUTOMATION_WRITES = [
   "recipe_action_trigger",
 ];
 
+const GROUPS_READS = [
+  "group_self_get",
+  "group_households_list",
+  "label_get",
+  "group_ai_provider_get",
+  "group_report_get",
+];
+const GROUPS_WRITES = [
+  "group_self_update",
+  "label_write",
+  "group_ai_provider_write",
+  "group_ai_provider_settings_update",
+  "group_seed",
+  "group_start_migration",
+  "group_report_delete",
+];
+
 const ALL_OPTIN = [
   ...HOUSEHOLDS_READS,
   ...HOUSEHOLDS_WRITES,
   ...AUTOMATION_READS,
   ...AUTOMATION_WRITES,
+  ...GROUPS_READS,
+  ...GROUPS_WRITES,
 ];
 
 describe("opt-in toolsets", () => {
   const AUTOMATION: ReadonlySet<ToolsetName> = new Set(["automation"]);
   const HOUSEHOLDS: ReadonlySet<ToolsetName> = new Set(["households"]);
+  const GROUPS: ReadonlySet<ToolsetName> = new Set(["groups"]);
+  const ALL: ReadonlySet<ToolsetName> = new Set(["households", "automation", "groups"]);
 
   it("omits every opt-in tool when no toolset is enabled", async () => {
     const names = await listToolNames({ readOnly: false });
@@ -183,7 +204,15 @@ describe("opt-in toolsets", () => {
       toolsets: new Set(["households", "automation"]),
     });
 
-    for (const tool of ALL_OPTIN) expect(names).toContain(tool);
+    for (const tool of [
+      ...HOUSEHOLDS_READS,
+      ...HOUSEHOLDS_WRITES,
+      ...AUTOMATION_READS,
+      ...AUTOMATION_WRITES,
+    ]) {
+      expect(names).toContain(tool);
+    }
+    for (const tool of [...GROUPS_READS, ...GROUPS_WRITES]) expect(names).not.toContain(tool);
     // 66 default + 5 opt-in reads (2 households + 3 automation) + 8 opt-in writes
     // (2 households + 6 automation) = 79
     expect(names).toHaveLength(79);
@@ -201,5 +230,43 @@ describe("opt-in toolsets", () => {
     }
     // 26 default reads + 5 opt-in reads; all 48 writes stripped
     expect(names).toHaveLength(31);
+  });
+
+  it("exposes only the groups tools when groups is enabled", async () => {
+    const names = await listToolNames({ readOnly: false, toolsets: GROUPS });
+
+    for (const tool of [...GROUPS_READS, ...GROUPS_WRITES]) expect(names).toContain(tool);
+    for (const tool of [
+      ...HOUSEHOLDS_READS,
+      ...AUTOMATION_READS,
+      ...HOUSEHOLDS_WRITES,
+      ...AUTOMATION_WRITES,
+    ]) {
+      expect(names).not.toContain(tool);
+    }
+  });
+
+  it("adds exactly 12 opt-in tools (78 full) when groups is enabled", async () => {
+    const names = await listToolNames({ readOnly: false, toolsets: GROUPS });
+
+    // 66 default + 5 group reads + 7 group writes = 78
+    expect(names).toHaveLength(78);
+  });
+
+  it("strips group writes under read-only (31 reads)", async () => {
+    const names = await listToolNames({ readOnly: true, toolsets: GROUPS });
+
+    for (const read of GROUPS_READS) expect(names).toContain(read);
+    for (const write of GROUPS_WRITES) expect(names).not.toContain(write);
+    // 26 default reads + 5 group reads; all writes stripped
+    expect(names).toHaveLength(31);
+  });
+
+  it("composes orthogonally — all three toolsets enabled (91 full)", async () => {
+    const names = await listToolNames({ readOnly: false, toolsets: ALL });
+
+    for (const tool of ALL_OPTIN) expect(names).toContain(tool);
+    // 66 default + 13 households/automation + 12 groups = 91
+    expect(names).toHaveLength(91);
   });
 });
