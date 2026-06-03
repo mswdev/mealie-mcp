@@ -175,7 +175,19 @@ describe("opt-in toolsets", () => {
     for (const tool of [...AUTOMATION_READS, ...AUTOMATION_WRITES]) expect(names).toContain(tool);
   });
 
-  it("strips opt-in writes within enabled toolsets under read-only", async () => {
+  it("adds exactly 13 opt-in tools (79 full) when both toolsets are enabled", async () => {
+    const names = await listToolNames({
+      readOnly: false,
+      toolsets: new Set(["households", "automation"]),
+    });
+
+    for (const tool of ALL_OPTIN) expect(names).toContain(tool);
+    // 66 default + 5 opt-in reads (2 households + 3 automation) + 8 opt-in writes
+    // (2 households + 6 automation) = 79
+    expect(names).toHaveLength(79);
+  });
+
+  it("strips opt-in writes within enabled toolsets under read-only (31 reads)", async () => {
     const names = await listToolNames({
       readOnly: true,
       toolsets: new Set(["households", "automation"]),
@@ -185,5 +197,7 @@ describe("opt-in toolsets", () => {
     for (const write of [...HOUSEHOLDS_WRITES, ...AUTOMATION_WRITES]) {
       expect(names).not.toContain(write);
     }
+    // 26 default reads + 5 opt-in reads; all 48 writes stripped
+    expect(names).toHaveLength(31);
   });
 });
