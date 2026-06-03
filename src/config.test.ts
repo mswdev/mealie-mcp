@@ -45,4 +45,11 @@ describe("parseToolsets", () => {
     expect(enabled.has("households")).toBe(true);
     expect(enabled.size).toBe(1);
   });
+
+  it("enables the groups toolset, alone and alongside the others", () => {
+    expect(parseToolsets("groups")).toEqual(new Set(["groups"]));
+    expect(parseToolsets("households,automation,groups")).toEqual(
+      new Set(["households", "automation", "groups"]),
+    );
+  });
 });
