@@ -81,7 +81,9 @@ describe("recipeActionWriteHandler", () => {
       method: "GET",
       path: "/api/households/recipe-actions/a1",
     });
-    const put = client.calls[1]?.body as Record<string, unknown>;
+    const putCall = client.calls.find((call) => call.method === "PUT");
+    expect(putCall?.path).toBe("/api/households/recipe-actions/a1");
+    const put = putCall?.body as Record<string, unknown>;
     expect(put.title).toBe("Renamed");
     expect(put.groupId).toBe("g1");
     expect(put.householdId).toBe("h1");

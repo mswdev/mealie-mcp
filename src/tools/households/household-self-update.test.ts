@@ -59,7 +59,9 @@ describe("householdSelfUpdateHandler — preferences", () => {
     });
 
     expect(client.calls[0]).toMatchObject({ method: "GET", path: "/api/households/preferences" });
-    const put = client.calls[1]?.body as Record<string, unknown>;
+    const putCall = client.calls.find((call) => call.method === "PUT");
+    expect(putCall?.path).toBe("/api/households/preferences");
+    const put = putCall?.body as Record<string, unknown>;
     expect(put.recipePublic).toBe(false);
     expect(put.privateHousehold).toBe(true);
     expect(put.firstDayOfWeek).toBe(1);
@@ -68,6 +70,27 @@ describe("householdSelfUpdateHandler — preferences", () => {
 
   it("requires changes for target=preferences", async () => {
     const result = await householdSelfUpdateHandler(fakeClient({}), { target: "preferences" });
+
+    expect(result.isError).toBe(true);
+  });
+
+  it("returns an error result when the client throws (preferences path)", async () => {
+    const client = {
+      async get<T>(): Promise<T> {
+        throw new Error("boom");
+      },
+      async getPaginated<T>(): Promise<T> {
+        throw new Error("boom");
+      },
+      async put<T>(): Promise<T> {
+        throw new Error("boom");
+      },
+    };
+
+    const result = await householdSelfUpdateHandler(client, {
+      target: "preferences",
+      changes: { recipePublic: false },
+    });
 
     expect(result.isError).toBe(true);
   });

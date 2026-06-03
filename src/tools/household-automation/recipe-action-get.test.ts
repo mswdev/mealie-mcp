@@ -51,6 +51,15 @@ describe("recipeActionGetHandler", () => {
     expect(bodyOf(result)).not.toHaveProperty("groupId");
   });
 
+  it("returns the whole action when detailed", async () => {
+    const result = await recipeActionGetHandler(fakeClient([]), {
+      item_id: "a1",
+      response_format: "detailed",
+    });
+
+    expect(bodyOf(result)).toHaveProperty("groupId", "g1");
+  });
+
   it("returns an error result when the client throws", async () => {
     const client = {
       async get<T>(): Promise<T> {

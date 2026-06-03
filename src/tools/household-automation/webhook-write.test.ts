@@ -77,7 +77,9 @@ describe("webhookWriteHandler", () => {
     });
 
     expect(client.calls[0]).toMatchObject({ method: "GET", path: "/api/households/webhooks/w1" });
-    const put = client.calls[1]?.body as Record<string, unknown>;
+    const putCall = client.calls.find((call) => call.method === "PUT");
+    expect(putCall?.path).toBe("/api/households/webhooks/w1");
+    const put = putCall?.body as Record<string, unknown>;
     expect(put.enabled).toBe(false);
     expect(put.scheduledTime).toBe("06:00");
     expect(put.url).toBe("https://e.test/h");

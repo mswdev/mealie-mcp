@@ -59,6 +59,15 @@ describe("eventNotificationWriteHandler", () => {
     expect(client.calls[0]?.body).toEqual({ name: "Apprise" });
   });
 
+  it("rejects create without a name", async () => {
+    const client = fakeClient();
+
+    const result = await eventNotificationWriteHandler(client, { action: "create" });
+
+    expect(result.isError).toBe(true);
+    expect(client.calls).toHaveLength(0);
+  });
+
   it("includes appriseUrl in the create body only when supplied", async () => {
     const client = fakeClient();
 
@@ -84,7 +93,9 @@ describe("eventNotificationWriteHandler", () => {
       method: "GET",
       path: "/api/households/events/notifications/n1",
     });
-    const put = client.calls[1]?.body as Record<string, unknown>;
+    const putCall = client.calls.find((call) => call.method === "PUT");
+    expect(putCall?.path).toBe("/api/households/events/notifications/n1");
+    const put = putCall?.body as Record<string, unknown>;
     expect(put.enabled).toBe(false);
     expect(put.options).toEqual(CURRENT.options);
     expect(put.groupId).toBe("g1");

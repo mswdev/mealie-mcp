@@ -169,10 +169,12 @@ describe("opt-in toolsets", () => {
       expect(names).not.toContain(tool);
   });
 
-  it("exposes automation reads + writes when the toolset is enabled", async () => {
+  it("exposes only the automation tools when automation is enabled", async () => {
     const names = await listToolNames({ readOnly: false, toolsets: AUTOMATION });
 
     for (const tool of [...AUTOMATION_READS, ...AUTOMATION_WRITES]) expect(names).toContain(tool);
+    for (const tool of [...HOUSEHOLDS_READS, ...HOUSEHOLDS_WRITES])
+      expect(names).not.toContain(tool);
   });
 
   it("adds exactly 13 opt-in tools (79 full) when both toolsets are enabled", async () => {
