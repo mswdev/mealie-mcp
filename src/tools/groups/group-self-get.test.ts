@@ -49,12 +49,16 @@ describe("groupSelfGetHandler", () => {
     expect(bodyOf(result)).toMatchObject({ preferences: { x: 1 } });
   });
 
-  it("lists members (paginated) when view=members and no usernameOrId", async () => {
+  it("lists members (paginated), forwarding orderByNullPosition", async () => {
     const client = fakeClient();
 
-    const result = await groupSelfGetHandler(client, { view: "members" });
+    const result = await groupSelfGetHandler(client, {
+      view: "members",
+      orderByNullPosition: "last",
+    });
 
     expect(client.calls[0]).toMatchObject({ method: "GET_PAGINATED", path: "/api/groups/members" });
+    expect((client.calls[0]?.query as Record<string, unknown>).orderByNullPosition).toBe("last");
     expect(bodyOf(result)).toMatchObject({ total: 1 });
   });
 

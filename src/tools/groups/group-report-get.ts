@@ -22,7 +22,9 @@ const inputSchema = {
   response_format: z
     .enum(["concise", "detailed"])
     .optional()
-    .describe("concise (default) trims report fields; detailed returns everything (incl. entries)"),
+    .describe(
+      "Detail level. The list defaults to concise; a single report (item_id) defaults to detailed so its entries[] are included.",
+    ),
 };
 
 type GetArgs = {
@@ -51,10 +53,13 @@ export async function groupReportGetHandler(
   }
 }
 
-/** Fetches and projects a single report (ReportOut, with entries) by id. */
+/**
+ * Fetches and projects a single report by id. Defaults to detailed: the whole
+ * reason to fetch one report (vs the list) is its entries[], which concise drops.
+ */
 async function getOne(client: GetClient, args: GetArgs): Promise<CallToolResult> {
   const report = await client.get<Record<string, unknown>>(`${BASE_PATH}/${args.item_id}`);
-  return jsonResult(projectReport(report, args.response_format ?? "concise"));
+  return jsonResult(projectReport(report, args.response_format ?? "detailed"));
 }
 
 /** Fetches the bare-array report list and projects concise items. */

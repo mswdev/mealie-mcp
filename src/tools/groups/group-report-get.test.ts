@@ -60,6 +60,14 @@ describe("groupReportGetHandler", () => {
     expect(bodyOf(result)).toMatchObject({ entries: [{ message: "ok" }] });
   });
 
+  it("defaults a single report (by id) to detailed so entries are surfaced", async () => {
+    const client = fakeClient({ id: "r1", name: "Backup", entries: [{ message: "ok" }] });
+
+    const result = await groupReportGetHandler(client, { item_id: "r1" });
+
+    expect(bodyOf(result)).toMatchObject({ entries: [{ message: "ok" }] });
+  });
+
   it("returns an error result when the client throws", async () => {
     const client = {
       async get<T>(): Promise<T> {

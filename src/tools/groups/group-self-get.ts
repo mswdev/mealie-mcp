@@ -40,6 +40,10 @@ const inputSchema = {
     .describe(`Items per page (default ${DEFAULT_PER_PAGE}, view=members)`),
   orderBy: z.string().optional().describe("Field to sort by (view=members)"),
   orderDirection: z.enum(["asc", "desc"]).optional().describe("Sort direction (view=members)"),
+  orderByNullPosition: z
+    .enum(["first", "last"])
+    .optional()
+    .describe("Where null values sort (view=members)"),
   queryFilter: z.string().optional().describe("Mealie filter expression (view=members)"),
 };
 
@@ -51,6 +55,7 @@ type GetArgs = {
   perPage?: number | undefined;
   orderBy?: string | undefined;
   orderDirection?: "asc" | "desc" | undefined;
+  orderByNullPosition?: "first" | "last" | undefined;
   queryFilter?: string | undefined;
 };
 
@@ -92,6 +97,7 @@ async function members(client: GetClient, args: GetArgs): Promise<CallToolResult
     perPage: args.perPage ?? DEFAULT_PER_PAGE,
     orderBy: args.orderBy,
     orderDirection: args.orderDirection,
+    orderByNullPosition: args.orderByNullPosition,
     queryFilter: args.queryFilter,
   });
   return jsonResult(page);
