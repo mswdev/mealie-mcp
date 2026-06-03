@@ -1,5 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { MealieClient } from "./client/MealieClient.js";
+import type { ToolsetName } from "./config.js";
 import { registerAppTools } from "./tools/app/index.js";
 import { registerCookbookTools } from "./tools/cookbooks/index.js";
 import { registerFoodsUnitsTools } from "./tools/foods-units/index.js";
@@ -12,7 +13,12 @@ const SERVER_NAME = "mealie-mcp";
 const SERVER_VERSION = "0.1.0";
 
 /** Options that influence which tools the server exposes. */
-export type ServerOptions = { readOnly: boolean };
+export type ServerOptions = {
+  /** When true, all mutating tools are stripped at registration. */
+  readOnly: boolean;
+  /** The opt-in toolsets to enable (default-enabled domains register regardless). */
+  toolsets: ReadonlySet<ToolsetName>;
+};
 
 /**
  * Creates and configures the MCP server with all registered tools.

@@ -2,7 +2,11 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { describe, expect, it } from "vitest";
 import { MealieClient } from "./client/MealieClient.js";
+import type { ToolsetName } from "./config.js";
 import { createServer } from "./server.js";
+
+/** No opt-in toolsets enabled — the default surface. */
+const NO_TOOLSETS: ReadonlySet<ToolsetName> = new Set();
 
 /** All mutating tools — none of these may appear when read-only is on. */
 const WRITE_TOOLS = [
@@ -89,8 +93,14 @@ const READ_TOOLS = [
   "unit_get",
 ];
 
-async function listToolNames(readOnly: boolean): Promise<string[]> {
-  const server = createServer(new MealieClient("https://m.test", "tok"), { readOnly });
+async function listToolNames(options: {
+  readOnly: boolean;
+  toolsets?: ReadonlySet<ToolsetName>;
+}): Promise<string[]> {
+  const server = createServer(new MealieClient("https://m.test", "tok"), {
+    readOnly: options.readOnly,
+    toolsets: options.toolsets ?? NO_TOOLSETS,
+  });
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
   const client = new Client({ name: "test", version: "0" });
   await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
@@ -101,7 +111,7 @@ async function listToolNames(readOnly: boolean): Promise<string[]> {
 
 describe("read-only switch", () => {
   it("hides every mutating tool when MEALIE_READ_ONLY is on", async () => {
-    const names = await listToolNames(true);
+    const names = await listToolNames({ readOnly: true });
 
     for (const read of READ_TOOLS) expect(names).toContain(read);
     for (const write of WRITE_TOOLS) expect(names).not.toContain(write);
@@ -111,7 +121,7 @@ describe("read-only switch", () => {
   });
 
   it("exposes mutating tools when not read-only", async () => {
-    const names = await listToolNames(false);
+    const names = await listToolNames({ readOnly: false });
 
     for (const read of READ_TOOLS) expect(names).toContain(read);
     for (const write of WRITE_TOOLS) expect(names).toContain(write);
