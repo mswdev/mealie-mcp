@@ -1,4 +1,5 @@
 import * as z from "zod";
+import { logger } from "./logger.js";
 
 /** Lowest valid TCP port number. */
 const MIN_PORT = 1;
@@ -23,6 +24,38 @@ export function parseReadOnly(value: string | undefined): boolean {
   return TRUTHY_ENV_VALUES.includes(normalized as (typeof TRUTHY_ENV_VALUES)[number]);
 }
 
+/** Opt-in toolset tokens recognized in MEALIE_TOOLSETS. Extend per opt-in PR (#8-#11). */
+export const KNOWN_TOOLSETS = ["households", "automation"] as const;
+
+/** A recognized opt-in toolset name. */
+export type ToolsetName = (typeof KNOWN_TOOLSETS)[number];
+
+/** Type guard: is the token one of the recognized opt-in toolsets? */
+function isKnownToolset(token: string): token is ToolsetName {
+  return (KNOWN_TOOLSETS as readonly string[]).includes(token);
+}
+
+/**
+ * Parses MEALIE_TOOLSETS into the set of enabled opt-in toolsets. The value is a
+ * comma-separated list; tokens are trimmed, lower-cased, and de-duplicated.
+ * Unknown tokens are logged to stderr and ignored so a single typo never blocks
+ * startup — valid tokens still take effect.
+ *
+ * @param value - Raw env value (or undefined when unset)
+ * @returns The set of recognized toolset names to enable (empty when unset)
+ */
+export function parseToolsets(value: string | undefined): Set<ToolsetName> {
+  const enabled = new Set<ToolsetName>();
+  if (value === undefined) return enabled;
+  for (const raw of value.split(",")) {
+    const token = raw.trim().toLowerCase();
+    if (token === "") continue;
+    if (isKnownToolset(token)) enabled.add(token);
+    else logger.warn({ token }, "Ignoring unknown MEALIE_TOOLSETS token");
+  }
+  return enabled;
+}
+
 const configSchema = z.object({
   MEALIE_URL: z.string().url("MEALIE_URL must be a valid URL (e.g. https://mealie.example.com)"),
   MEALIE_API_TOKEN: z.string().min(1, "MEALIE_API_TOKEN is required"),
@@ -34,6 +67,10 @@ const configSchema = z.object({
       z.boolean(),
     )
     .default(false),
+  MEALIE_TOOLSETS: z
+    .string()
+    .optional()
+    .transform((value) => parseToolsets(value)),
 });
 
 /** Validated server configuration derived from environment variables. */
