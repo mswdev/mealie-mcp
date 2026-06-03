@@ -23,6 +23,7 @@ Set these environment variables before running:
 | `TRANSPORT` | No | `stdio` (default) or `http` |
 | `PORT` | No | HTTP port when using `TRANSPORT=http` (default: `3000`) |
 | `MEALIE_READ_ONLY` | No | When `true`/`1`/`yes`/`on`, every mutating tool (create, update, delete, import, bulk actions, etc.) is **not registered** — the server exposes reads only. Default: `false`. |
+| `MEALIE_TOOLSETS` | No | Comma-separated list of **opt-in** toolsets to enable, e.g. `households,automation`. Recognized tokens: `households`, `automation`. Unset → only the default tools. Unknown tokens are logged to stderr and ignored. Composes with `MEALIE_READ_ONLY` (enabled toolsets still have their writes stripped in read-only mode). |
 
 ## App Tools
 
@@ -89,6 +90,28 @@ The foods/units domain (12 tools) covers the ingredient catalog primitives — *
 - **Write:** `food_create`, `food_update`, `food_merge`, `food_delete`, `unit_create`, `unit_update`, `unit_merge`, `unit_delete`
 
 > `food_search` / `unit_search` resolve an ingredient or unit name to the id that recipe ingredients and shopping items reference. `food_merge` / `unit_merge` combine one entry into another (the source is removed) — destructive, so they require `confirm: true`, as do the deletes. Both domains are **default-enabled**; updates are full-replace PUTs done as fetch-merge so untouched fields are preserved.
+
+## Opt-in Toolsets
+
+Everything above is **default-enabled**. Domains beyond the core cooking surface are **opt-in**: they register only when named in `MEALIE_TOOLSETS` (e.g. `MEALIE_TOOLSETS=households,automation`). This keeps the default tool list small while letting you turn on more coverage per session. Selection is **static** — there is no runtime tool-discovery meta-tool. `MEALIE_READ_ONLY` still applies: an enabled toolset's write tools are stripped in read-only mode.
+
+### `households` — Household Management (4 tools)
+
+Self-service household administration (Mealie's *Self Service* + *Invitations*):
+
+- **Read:** `household_self_get` (a `view` dispatcher: `household` | `preferences` | `statistics` | `members` | `recipe`), `household_invitations_list`
+- **Write:** `household_self_update` (`target: preferences | permissions`), `household_invite` (`action: create | send_email`)
+
+> `household_self_update` does full-replace PUTs as fetch-merge so untouched fields are preserved. `target=permissions` is **privilege-elevating** — it requires `confirm: true` and merges onto the member's current flags so an unspecified flag is never silently downgraded. `household_invite send_email` dispatches an email. `view=recipe` returns a thin `{lastMade, recipeId}` pivot, not full recipe content.
+
+### `automation` — Webhooks, Notifications & Recipe Actions (9 tools)
+
+Event automation (Mealie's *Webhooks* + *Event Notifications* + *Recipe Actions*), three parallel resources each with a read, a write-dispatcher, and a side-effecting action verb:
+
+- **Read:** `webhook_get`, `event_notification_get`, `recipe_action_get` (each lists, or fetches one by `item_id`)
+- **Write:** `webhook_write` / `event_notification_write` / `recipe_action_write` (`action: create | update | delete`; update is fetch-merge, delete is `confirm`-gated), plus the action verbs `webhook_action` (`test` | `rerun`), `event_notification_test`, `recipe_action_trigger`
+
+> The action verbs (test / rerun / trigger) are non-destructive but **hit the network / fire side effects** (a test webhook call, a live Apprise message, running a recipe action), so they are registered as writes and are stripped under `MEALIE_READ_ONLY`.
 
 ## Usage with MCP Clients
 
