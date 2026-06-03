@@ -2,7 +2,11 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { describe, expect, it } from "vitest";
 import { MealieClient } from "./client/MealieClient.js";
+import type { ToolsetName } from "./config.js";
 import { createServer } from "./server.js";
+
+/** No opt-in toolsets enabled — the default surface. */
+const NO_TOOLSETS: ReadonlySet<ToolsetName> = new Set();
 
 /** All mutating tools — none of these may appear when read-only is on. */
 const WRITE_TOOLS = [
@@ -89,8 +93,14 @@ const READ_TOOLS = [
   "unit_get",
 ];
 
-async function listToolNames(readOnly: boolean): Promise<string[]> {
-  const server = createServer(new MealieClient("https://m.test", "tok"), { readOnly });
+async function listToolNames(options: {
+  readOnly: boolean;
+  toolsets?: ReadonlySet<ToolsetName>;
+}): Promise<string[]> {
+  const server = createServer(new MealieClient("https://m.test", "tok"), {
+    readOnly: options.readOnly,
+    toolsets: options.toolsets ?? NO_TOOLSETS,
+  });
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
   const client = new Client({ name: "test", version: "0" });
   await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
@@ -101,7 +111,7 @@ async function listToolNames(readOnly: boolean): Promise<string[]> {
 
 describe("read-only switch", () => {
   it("hides every mutating tool when MEALIE_READ_ONLY is on", async () => {
-    const names = await listToolNames(true);
+    const names = await listToolNames({ readOnly: true });
 
     for (const read of READ_TOOLS) expect(names).toContain(read);
     for (const write of WRITE_TOOLS) expect(names).not.toContain(write);
@@ -111,12 +121,85 @@ describe("read-only switch", () => {
   });
 
   it("exposes mutating tools when not read-only", async () => {
-    const names = await listToolNames(false);
+    const names = await listToolNames({ readOnly: false });
 
     for (const read of READ_TOOLS) expect(names).toContain(read);
     for (const write of WRITE_TOOLS) expect(names).toContain(write);
     // 26 reads (2 app + 9 recipe + 2 cookbook + 4 meal-plan + 3 shopping + 2 organizer + 4 foods/units)
     // + 40 writes (14 recipe + 3 cookbook + 4 meal-plan + 8 shopping + 3 organizer + 8 foods/units)
     expect(names).toHaveLength(66);
+  });
+});
+
+// Opt-in toolset tools, grown per resource as they land (finalized in the e2e below).
+const HOUSEHOLDS_READS = ["household_self_get", "household_invitations_list"];
+const HOUSEHOLDS_WRITES = ["household_self_update", "household_invite"];
+const AUTOMATION_READS = ["webhook_get", "event_notification_get", "recipe_action_get"];
+const AUTOMATION_WRITES = [
+  "webhook_write",
+  "webhook_action",
+  "event_notification_write",
+  "event_notification_test",
+  "recipe_action_write",
+  "recipe_action_trigger",
+];
+
+const ALL_OPTIN = [
+  ...HOUSEHOLDS_READS,
+  ...HOUSEHOLDS_WRITES,
+  ...AUTOMATION_READS,
+  ...AUTOMATION_WRITES,
+];
+
+describe("opt-in toolsets", () => {
+  const AUTOMATION: ReadonlySet<ToolsetName> = new Set(["automation"]);
+  const HOUSEHOLDS: ReadonlySet<ToolsetName> = new Set(["households"]);
+
+  it("omits every opt-in tool when no toolset is enabled", async () => {
+    const names = await listToolNames({ readOnly: false });
+
+    for (const tool of ALL_OPTIN) expect(names).not.toContain(tool);
+  });
+
+  it("exposes only the households tools when households is enabled", async () => {
+    const names = await listToolNames({ readOnly: false, toolsets: HOUSEHOLDS });
+
+    for (const tool of [...HOUSEHOLDS_READS, ...HOUSEHOLDS_WRITES]) expect(names).toContain(tool);
+    for (const tool of [...AUTOMATION_READS, ...AUTOMATION_WRITES])
+      expect(names).not.toContain(tool);
+  });
+
+  it("exposes only the automation tools when automation is enabled", async () => {
+    const names = await listToolNames({ readOnly: false, toolsets: AUTOMATION });
+
+    for (const tool of [...AUTOMATION_READS, ...AUTOMATION_WRITES]) expect(names).toContain(tool);
+    for (const tool of [...HOUSEHOLDS_READS, ...HOUSEHOLDS_WRITES])
+      expect(names).not.toContain(tool);
+  });
+
+  it("adds exactly 13 opt-in tools (79 full) when both toolsets are enabled", async () => {
+    const names = await listToolNames({
+      readOnly: false,
+      toolsets: new Set(["households", "automation"]),
+    });
+
+    for (const tool of ALL_OPTIN) expect(names).toContain(tool);
+    // 66 default + 5 opt-in reads (2 households + 3 automation) + 8 opt-in writes
+    // (2 households + 6 automation) = 79
+    expect(names).toHaveLength(79);
+  });
+
+  it("strips opt-in writes within enabled toolsets under read-only (31 reads)", async () => {
+    const names = await listToolNames({
+      readOnly: true,
+      toolsets: new Set(["households", "automation"]),
+    });
+
+    for (const read of [...HOUSEHOLDS_READS, ...AUTOMATION_READS]) expect(names).toContain(read);
+    for (const write of [...HOUSEHOLDS_WRITES, ...AUTOMATION_WRITES]) {
+      expect(names).not.toContain(write);
+    }
+    // 26 default reads + 5 opt-in reads; all 48 writes stripped
+    expect(names).toHaveLength(31);
   });
 });

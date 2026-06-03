@@ -1,8 +1,11 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { MealieClient } from "./client/MealieClient.js";
+import type { ToolsetName } from "./config.js";
 import { registerAppTools } from "./tools/app/index.js";
 import { registerCookbookTools } from "./tools/cookbooks/index.js";
 import { registerFoodsUnitsTools } from "./tools/foods-units/index.js";
+import { registerHouseholdAutomationTools } from "./tools/household-automation/index.js";
+import { registerHouseholdTools } from "./tools/households/index.js";
 import { registerMealPlanTools } from "./tools/meal-plans/index.js";
 import { registerOrganizerTools } from "./tools/organizers/index.js";
 import { registerRecipeTools } from "./tools/recipes/index.js";
@@ -12,7 +15,12 @@ const SERVER_NAME = "mealie-mcp";
 const SERVER_VERSION = "0.1.0";
 
 /** Options that influence which tools the server exposes. */
-export type ServerOptions = { readOnly: boolean };
+export type ServerOptions = {
+  /** When true, all mutating tools are stripped at registration. */
+  readOnly: boolean;
+  /** The opt-in toolsets to enable (default-enabled domains register regardless). */
+  toolsets: ReadonlySet<ToolsetName>;
+};
 
 /**
  * Creates and configures the MCP server with all registered tools.
@@ -32,6 +40,14 @@ export function createServer(client: MealieClient, options: ServerOptions): McpS
   registerShoppingTools(server, client, options);
   registerOrganizerTools(server, client, options);
   registerFoodsUnitsTools(server, client, options);
+
+  // Opt-in toolsets (off unless named in MEALIE_TOOLSETS); read-only still strips writes within.
+  if (options.toolsets.has("households")) {
+    registerHouseholdTools(server, client, options);
+  }
+  if (options.toolsets.has("automation")) {
+    registerHouseholdAutomationTools(server, client, options);
+  }
 
   return server;
 }
