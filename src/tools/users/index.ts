@@ -1,5 +1,6 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { MealieClient } from "../../client/MealieClient.js";
+import { registerUserApiTokenWrite } from "./user-api-token-write.js";
 import { registerUserMe } from "./user-me.js";
 import { registerUserRatingsGet } from "./user-ratings-get.js";
 import { registerUserRatingsWrite } from "./user-ratings-write.js";
@@ -31,4 +32,5 @@ export function registerUserTools(
   // Writes (stripped under read-only).
   registerUserSelfUpdate(server, client);
   registerUserRatingsWrite(server, client);
+  registerUserApiTokenWrite(server, client);
 }
