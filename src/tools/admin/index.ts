@@ -10,6 +10,7 @@ import { registerAdminUserActions } from "./manage/admin-user-actions.js";
 import { registerAdminUserGet } from "./manage/admin-user-get.js";
 import { registerAdminUserWrite } from "./manage/admin-user-write.js";
 import { registerAdminAbout } from "./site/admin-about.js";
+import { registerAdminBackupGet } from "./site/admin-backup-get.js";
 
 /** Options controlling which admin tools are registered. */
 export type RegisterOptions = { readOnly: boolean };
@@ -36,6 +37,7 @@ export function registerAdminTools(
   registerAdminHouseholdGet(server, client);
   registerAdminGroupGet(server, client);
   registerAdminAiProviderGet(server, client);
+  registerAdminBackupGet(server, client);
 
   if (options.readOnly) return;
   // Writes (stripped under read-only).
