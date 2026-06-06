@@ -9,6 +9,9 @@ export type AdminAbout = components["schemas"]["AdminAboutInfo"];
 /** Mealie's generic write acknowledgement ({message, error} — error:true on a 200 IS a failure). */
 export type SuccessResponse = components["schemas"]["SuccessResponse"];
 
+/** An admin-visible household, as returned by the /api/admin/households endpoints. */
+export type AdminHousehold = components["schemas"]["HouseholdInDB"];
+
 /** dbUrl is a DB connection string that may embed credentials — never surfaced. */
 const ABOUT_REDACTED_FIELDS = ["dbUrl"] as const;
 
@@ -35,6 +38,9 @@ const USER_CONCISE_FIELDS = [
   "householdId",
   "tokens",
 ] as const;
+
+/** Fields kept in a household's concise projection (nested users/webhooks trimmed). */
+const HOUSEHOLD_CONCISE_FIELDS = ["id", "name", "slug", "groupId", "group", "preferences"] as const;
 
 /**
  * Keeps only the named fields of a record (no `delete`, no destructure-discards — Biome).
@@ -89,4 +95,21 @@ export function projectAdminUser(
   const source = user as unknown as Record<string, unknown>;
   if (format === "detailed") return omitFields(source, USER_REDACTED_FIELDS);
   return pickFields(source, USER_CONCISE_FIELDS);
+}
+
+/**
+ * Projects an admin-visible household for output. Concise trims the nested
+ * member/webhook lists; detailed returns everything.
+ *
+ * @param household - The full HouseholdInDB object
+ * @param format - "concise" trims; "detailed" returns everything
+ * @returns The projected household as a plain record
+ */
+export function projectAdminHousehold(
+  household: AdminHousehold,
+  format: "concise" | "detailed",
+): Record<string, unknown> {
+  const source = household as unknown as Record<string, unknown>;
+  if (format === "detailed") return source;
+  return pickFields(source, HOUSEHOLD_CONCISE_FIELDS);
 }
