@@ -5,6 +5,7 @@ import { registerUserMe } from "./user-me.js";
 import { registerUserPasswordWrite } from "./user-password-write.js";
 import { registerUserRatingsGet } from "./user-ratings-get.js";
 import { registerUserRatingsWrite } from "./user-ratings-write.js";
+import { registerUserRegister } from "./user-register.js";
 import { registerUserSelfUpdate } from "./user-self-update.js";
 
 /** Options controlling which user tools are registered. */
@@ -35,4 +36,5 @@ export function registerUserTools(
   registerUserRatingsWrite(server, client);
   registerUserApiTokenWrite(server, client);
   registerUserPasswordWrite(server, client);
+  registerUserRegister(server, client);
 }
