@@ -11,6 +11,7 @@ import { registerMealPlanTools } from "./tools/meal-plans/index.js";
 import { registerOrganizerTools } from "./tools/organizers/index.js";
 import { registerRecipeTools } from "./tools/recipes/index.js";
 import { registerShoppingTools } from "./tools/shopping-lists/index.js";
+import { registerUserTools } from "./tools/users/index.js";
 
 const SERVER_NAME = "mealie-mcp";
 const SERVER_VERSION = "0.1.0";
@@ -51,6 +52,9 @@ export function createServer(client: MealieClient, options: ServerOptions): McpS
   }
   if (options.toolsets.has("groups")) {
     registerGroupTools(server, client, options);
+  }
+  if (options.toolsets.has("users")) {
+    registerUserTools(server, client, options);
   }
 
   return server;

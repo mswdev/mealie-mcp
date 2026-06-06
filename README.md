@@ -23,7 +23,7 @@ Set these environment variables before running:
 | `TRANSPORT` | No | `stdio` (default) or `http` |
 | `PORT` | No | HTTP port when using `TRANSPORT=http` (default: `3000`) |
 | `MEALIE_READ_ONLY` | No | When `true`/`1`/`yes`/`on`, every mutating tool (create, update, delete, import, bulk actions, etc.) is **not registered** — the server exposes reads only. Default: `false`. |
-| `MEALIE_TOOLSETS` | No | Comma-separated list of **opt-in** toolsets to enable, e.g. `households,automation,groups`. Recognized tokens: `households`, `automation`, `groups`. Unset → only the default tools. Unknown tokens are logged to stderr and ignored. Composes with `MEALIE_READ_ONLY` (enabled toolsets still have their writes stripped in read-only mode). |
+| `MEALIE_TOOLSETS` | No | Comma-separated list of **opt-in** toolsets to enable, e.g. `households,automation,groups,users`. Recognized tokens: `households`, `automation`, `groups`, `users`. Unset → only the default tools. Unknown tokens are logged to stderr and ignored. Composes with `MEALIE_READ_ONLY` (enabled toolsets still have their writes stripped in read-only mode). |
 
 ## App Tools
 
@@ -121,6 +121,15 @@ Group-scoped administration (Mealie's *Self Service*, *Households*, *MultiPurpos
 - **Write:** `group_self_update` (preferences fetch-merge), `label_write` (`action: create | update | delete`), `group_ai_provider_write` (`action: create | update | delete`), `group_ai_provider_settings_update`, `group_seed` (`target: foods | labels | units`), `group_start_migration`, `group_report_delete`
 
 > **Labels** live here (`label_*`) and are the resolution target for shopping-list `labelId` — use `label_get` to map a label name to its id. **AI-provider `apiKey` is a write-only secret**: it's required on create *and* update (it can't be read back, so re-supply it every update) and is never returned by any tool. Updates are full-replace PUTs done as fetch-merge. **`group_start_migration`** uploads an archive (multipart) to import recipes from another app — it's destructive (`confirm: true`) and reads a file on the MCP server (stdio/local only); poll progress with `group_report_get`. `group_seed` is additive (it appends to the catalog). Destructive ops (`*_delete`, migration) require `confirm: true`.
+
+### `users` — Self-Service User Account (8 tools)
+
+The current user's self-service surface (Mealie's *Users: CRUD*, *Ratings*, *Passwords*, *Tokens*, *Registration*, *Images*) — **not** admin user management:
+
+- **Read:** `user_me` (a `view` dispatcher: `profile` | `ratings` | `favorites`, with `recipe_id` for one rating), `user_ratings_get` (another user's ratings/favorites by user id)
+- **Write:** `user_self_update` (profile fetch-merge), `user_ratings_write` (`action: rate | favorite | unfavorite`), `user_api_token_write` (`action: create | delete`), `user_password_write` (`action: change | forgot | reset`), `user_register`, `user_avatar_upload`
+
+> **API-token create returns the token value exactly once** — Mealie never exposes it again; list existing tokens (ids/names only) via `user_me`. Passwords and reset tokens are **never echoed** by any tool. `user_register` hits Mealie's **public** registration endpoint (instances may have signup disabled). `user_avatar_upload` is multipart and reads a file on the MCP server (stdio/local only). Rating/favorite writes act on the **current** user (the id is resolved automatically); `unfavorite` and token `delete` require `confirm: true`.
 
 ## Usage with MCP Clients
 

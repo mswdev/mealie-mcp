@@ -161,6 +161,16 @@ const GROUPS_WRITES = [
   "group_report_delete",
 ];
 
+const USERS_READS = ["user_me", "user_ratings_get"];
+const USERS_WRITES = [
+  "user_self_update",
+  "user_ratings_write",
+  "user_api_token_write",
+  "user_password_write",
+  "user_register",
+  "user_avatar_upload",
+];
+
 const ALL_OPTIN = [
   ...HOUSEHOLDS_READS,
   ...HOUSEHOLDS_WRITES,
@@ -168,13 +178,16 @@ const ALL_OPTIN = [
   ...AUTOMATION_WRITES,
   ...GROUPS_READS,
   ...GROUPS_WRITES,
+  ...USERS_READS,
+  ...USERS_WRITES,
 ];
 
 describe("opt-in toolsets", () => {
   const AUTOMATION: ReadonlySet<ToolsetName> = new Set(["automation"]);
   const HOUSEHOLDS: ReadonlySet<ToolsetName> = new Set(["households"]);
   const GROUPS: ReadonlySet<ToolsetName> = new Set(["groups"]);
-  const ALL: ReadonlySet<ToolsetName> = new Set(["households", "automation", "groups"]);
+  const USERS: ReadonlySet<ToolsetName> = new Set(["users"]);
+  const ALL: ReadonlySet<ToolsetName> = new Set(["households", "automation", "groups", "users"]);
 
   it("omits every opt-in tool when no toolset is enabled", async () => {
     const names = await listToolNames({ readOnly: false });
@@ -262,11 +275,43 @@ describe("opt-in toolsets", () => {
     expect(names).toHaveLength(31);
   });
 
-  it("composes orthogonally — all three toolsets enabled (91 full)", async () => {
+  it("exposes only the users tools when users is enabled", async () => {
+    const names = await listToolNames({ readOnly: false, toolsets: USERS });
+
+    for (const tool of [...USERS_READS, ...USERS_WRITES]) expect(names).toContain(tool);
+    for (const tool of [
+      ...HOUSEHOLDS_READS,
+      ...HOUSEHOLDS_WRITES,
+      ...AUTOMATION_READS,
+      ...AUTOMATION_WRITES,
+      ...GROUPS_READS,
+      ...GROUPS_WRITES,
+    ]) {
+      expect(names).not.toContain(tool);
+    }
+  });
+
+  it("adds exactly 8 opt-in tools (74 full) when users is enabled", async () => {
+    const names = await listToolNames({ readOnly: false, toolsets: USERS });
+
+    // 66 default + 2 user reads + 6 user writes = 74
+    expect(names).toHaveLength(74);
+  });
+
+  it("strips user writes under read-only (28 reads)", async () => {
+    const names = await listToolNames({ readOnly: true, toolsets: USERS });
+
+    for (const read of USERS_READS) expect(names).toContain(read);
+    for (const write of USERS_WRITES) expect(names).not.toContain(write);
+    // 26 default reads + 2 user reads; all writes stripped
+    expect(names).toHaveLength(28);
+  });
+
+  it("composes orthogonally — all four toolsets enabled (99 full)", async () => {
     const names = await listToolNames({ readOnly: false, toolsets: ALL });
 
     for (const tool of ALL_OPTIN) expect(names).toContain(tool);
-    // 66 default + 13 households/automation + 12 groups = 91
-    expect(names).toHaveLength(91);
+    // 66 default + 13 households/automation + 12 groups + 8 users = 99
+    expect(names).toHaveLength(99);
   });
 });

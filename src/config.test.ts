@@ -52,4 +52,11 @@ describe("parseToolsets", () => {
       new Set(["households", "automation", "groups"]),
     );
   });
+
+  it("enables the users toolset, alone and alongside the others", () => {
+    expect(parseToolsets("users")).toEqual(new Set(["users"]));
+    expect(parseToolsets("households,automation,groups,users")).toEqual(
+      new Set(["households", "automation", "groups", "users"]),
+    );
+  });
 });
