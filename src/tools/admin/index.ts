@@ -13,6 +13,8 @@ import { registerAdminAbout } from "./site/admin-about.js";
 import { registerAdminBackupGet } from "./site/admin-backup-get.js";
 import { registerAdminBackupRestore } from "./site/admin-backup-restore.js";
 import { registerAdminBackupWrite } from "./site/admin-backup-write.js";
+import { registerAdminDebugOpenai } from "./site/admin-debug-openai.js";
+import { registerAdminEmailTest } from "./site/admin-email-test.js";
 import { registerAdminMaintenanceClean } from "./site/admin-maintenance-clean.js";
 import { registerAdminMaintenanceGet } from "./site/admin-maintenance-get.js";
 
@@ -54,4 +56,6 @@ export function registerAdminTools(
   registerAdminBackupWrite(server, client);
   registerAdminBackupRestore(server, client);
   registerAdminMaintenanceClean(server, client);
+  registerAdminEmailTest(server, client);
+  registerAdminDebugOpenai(server, client);
 }
