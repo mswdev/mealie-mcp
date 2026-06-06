@@ -23,7 +23,7 @@ Set these environment variables before running:
 | `TRANSPORT` | No | `stdio` (default) or `http` |
 | `PORT` | No | HTTP port when using `TRANSPORT=http` (default: `3000`) |
 | `MEALIE_READ_ONLY` | No | When `true`/`1`/`yes`/`on`, every mutating tool (create, update, delete, import, bulk actions, etc.) is **not registered** — the server exposes reads only. Default: `false`. |
-| `MEALIE_TOOLSETS` | No | Comma-separated list of **opt-in** toolsets to enable, e.g. `households,automation,groups,users`. Recognized tokens: `households`, `automation`, `groups`, `users`. Unset → only the default tools. Unknown tokens are logged to stderr and ignored. Composes with `MEALIE_READ_ONLY` (enabled toolsets still have their writes stripped in read-only mode). |
+| `MEALIE_TOOLSETS` | No | Comma-separated list of **opt-in** toolsets to enable, e.g. `households,automation,groups,users,admin`. Recognized tokens: `households`, `automation`, `groups`, `users`, `admin`. Unset → only the default tools. Unknown tokens are logged to stderr and ignored. Composes with `MEALIE_READ_ONLY` (enabled toolsets still have their writes stripped in read-only mode). |
 
 ## App Tools
 
@@ -130,6 +130,15 @@ The current user's self-service surface (Mealie's *Users: CRUD*, *Ratings*, *Pas
 - **Write:** `user_self_update` (profile fetch-merge), `user_ratings_write` (`action: rate | favorite | unfavorite`), `user_api_token_write` (`action: create | delete`), `user_password_write` (`action: change | forgot | reset`), `user_register`, `user_avatar_upload`
 
 > **API-token create returns the token value exactly once** — Mealie never exposes it again; list existing tokens (ids/names only) via `user_me`. Passwords and reset tokens are **never echoed** by any tool. `user_register` hits Mealie's **public** registration endpoint (instances may have signup disabled). `user_avatar_upload` is multipart and reads a file on the MCP server (stdio/local only). Rating/favorite writes act on the **current** user (the id is resolved automatically); `unfavorite` and token `delete` require `confirm: true`.
+
+### `admin` — Site Administration (17 tools)
+
+The **site-operator surface** (`/api/admin/*` — Mealie's *Manage Users/Households/Groups*, *Backups*, *Maintenance*, *AI Providers*, *About*, *Email*, *Debug*). This is the **highest-blast-radius toolset** — enable it deliberately, and consider pairing it with `MEALIE_READ_ONLY=true` for a stats/inspection-only mode:
+
+- **Read:** `admin_about` (`include: statistics | check | email_ready`), `admin_user_get`, `admin_household_get`, `admin_group_get` (paginated lists or by-id), `admin_ai_provider_get`, `admin_maintenance_get` (`view: summary | storage`), `admin_backup_get` (list, or a one-time download URL by `file_name`)
+- **Write:** `admin_user_write`, `admin_household_write`, `admin_group_write`, `admin_ai_provider_write` (each `action: create | update | delete`, delete `confirm`-gated), `admin_user_actions` (`action: unlock | password_reset_token`), `admin_backup_write` (`action: create | upload | delete`), `admin_backup_restore`, `admin_maintenance_clean` (`target: images | temp | recipe_folders`, `confirm`-gated), `admin_email_test`, `admin_debug_openai`
+
+> **`admin_backup_restore` OVERWRITES the entire instance** (all recipes, users, settings). It is double-gated: `confirm: true` **and** `confirm_file_name` re-typed to exactly match `file_name`. Maintenance cleans delete files irreversibly (Mealie itself has no confirmation flag — the gate here is the only one). **Secrets:** the admin user-create password and AI-provider `apiKey` are never echoed (and error messages for those tools are sanitized to the HTTP status); the password-reset token is returned **exactly once** — deliver it out-of-band; `admin_about` redacts the DB connection string. `admin_email_test` sends a real email; `admin_debug_openai` fires a real (possibly billable) AI-provider request. Updates are full-replace PUTs done as fetch-merge — the user update round-trips the full account object and **cannot change passwords** (use `admin_user_actions`).
 
 ## Usage with MCP Clients
 
