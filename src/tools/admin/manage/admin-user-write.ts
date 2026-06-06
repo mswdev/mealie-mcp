@@ -34,7 +34,7 @@ const inputSchema = {
     .record(z.string(), z.unknown())
     .optional()
     .describe(
-      "Fields to change (update) — merged onto the current user; cannot change passwords (use admin_user_actions password_reset_token)",
+      "Fields to change (update) — merged onto the current user; cannot change passwords (use admin_user_actions password_reset_token). Do not set server-derived fields (id, groupId/householdId, slugs, cacheKey, tokens) — they round-trip automatically.",
     ),
   confirm: z.boolean().optional().describe("Must be true to delete"),
 };
