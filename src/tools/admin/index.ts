@@ -11,6 +11,7 @@ import { registerAdminUserGet } from "./manage/admin-user-get.js";
 import { registerAdminUserWrite } from "./manage/admin-user-write.js";
 import { registerAdminAbout } from "./site/admin-about.js";
 import { registerAdminBackupGet } from "./site/admin-backup-get.js";
+import { registerAdminBackupRestore } from "./site/admin-backup-restore.js";
 import { registerAdminBackupWrite } from "./site/admin-backup-write.js";
 
 /** Options controlling which admin tools are registered. */
@@ -48,4 +49,5 @@ export function registerAdminTools(
   registerAdminGroupWrite(server, client);
   registerAdminAiProviderWrite(server, client);
   registerAdminBackupWrite(server, client);
+  registerAdminBackupRestore(server, client);
 }
