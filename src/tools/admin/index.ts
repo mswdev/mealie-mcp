@@ -1,5 +1,6 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { MealieClient } from "../../client/MealieClient.js";
+import { registerAdminUserGet } from "./manage/admin-user-get.js";
 import { registerAdminAbout } from "./site/admin-about.js";
 
 /** Options controlling which admin tools are registered. */
@@ -23,6 +24,7 @@ export function registerAdminTools(
 ): void {
   // Reads (always on).
   registerAdminAbout(server, client);
+  registerAdminUserGet(server, client);
 
   if (options.readOnly) return;
   // Writes (stripped under read-only) — added per task.
