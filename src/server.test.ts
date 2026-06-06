@@ -193,6 +193,15 @@ const ADMIN_WRITES = [
   "admin_debug_openai",
 ];
 
+/** Explore is all reads — there is deliberately NO EXPLORE_WRITES array (design §6). */
+const EXPLORE_READS = [
+  "explore_recipe_search",
+  "explore_recipe_get",
+  "explore_recipe_suggestions",
+  "explore_list",
+  "explore_get",
+];
+
 const ALL_OPTIN = [
   ...HOUSEHOLDS_READS,
   ...HOUSEHOLDS_WRITES,
@@ -204,6 +213,7 @@ const ALL_OPTIN = [
   ...USERS_WRITES,
   ...ADMIN_READS,
   ...ADMIN_WRITES,
+  ...EXPLORE_READS,
 ];
 
 describe("opt-in toolsets", () => {
@@ -212,12 +222,14 @@ describe("opt-in toolsets", () => {
   const GROUPS: ReadonlySet<ToolsetName> = new Set(["groups"]);
   const USERS: ReadonlySet<ToolsetName> = new Set(["users"]);
   const ADMIN: ReadonlySet<ToolsetName> = new Set(["admin"]);
+  const EXPLORE: ReadonlySet<ToolsetName> = new Set(["explore"]);
   const ALL: ReadonlySet<ToolsetName> = new Set([
     "households",
     "automation",
     "groups",
     "users",
     "admin",
+    "explore",
   ]);
 
   it("omits every opt-in tool when no toolset is enabled", async () => {
@@ -372,11 +384,47 @@ describe("opt-in toolsets", () => {
     expect(names).toHaveLength(33);
   });
 
-  it("composes orthogonally — all five toolsets enabled (116 full)", async () => {
+  it("exposes only the explore tools when explore is enabled", async () => {
+    const names = await listToolNames({ readOnly: false, toolsets: EXPLORE });
+
+    for (const tool of EXPLORE_READS) expect(names).toContain(tool);
+    for (const tool of [
+      ...HOUSEHOLDS_READS,
+      ...HOUSEHOLDS_WRITES,
+      ...AUTOMATION_READS,
+      ...AUTOMATION_WRITES,
+      ...GROUPS_READS,
+      ...GROUPS_WRITES,
+      ...USERS_READS,
+      ...USERS_WRITES,
+      ...ADMIN_READS,
+      ...ADMIN_WRITES,
+    ]) {
+      expect(names).not.toContain(tool);
+    }
+  });
+
+  it("adds exactly 5 opt-in tools (71 full) when explore is enabled", async () => {
+    const names = await listToolNames({ readOnly: false, toolsets: EXPLORE });
+
+    // 66 default + 5 explore reads + 0 explore writes = 71
+    expect(names).toHaveLength(71);
+  });
+
+  it("keeps every explore tool under read-only (31 reads) — explore has no writes to strip", async () => {
+    const names = await listToolNames({ readOnly: true, toolsets: EXPLORE });
+
+    // The first toolset that fully survives read-only: all 5 explore tools remain.
+    for (const tool of EXPLORE_READS) expect(names).toContain(tool);
+    // 26 default reads + 5 explore reads; nothing stripped from explore itself
+    expect(names).toHaveLength(31);
+  });
+
+  it("composes orthogonally — all six toolsets enabled (121 full)", async () => {
     const names = await listToolNames({ readOnly: false, toolsets: ALL });
 
     for (const tool of ALL_OPTIN) expect(names).toContain(tool);
-    // 66 default + 13 households/automation + 12 groups + 8 users + 17 admin = 116
-    expect(names).toHaveLength(116);
+    // 66 default + 13 households/automation + 12 groups + 8 users + 17 admin + 5 explore = 121
+    expect(names).toHaveLength(121);
   });
 });
