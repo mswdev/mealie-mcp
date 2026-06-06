@@ -25,7 +25,7 @@ export function parseReadOnly(value: string | undefined): boolean {
 }
 
 /** Opt-in toolset tokens recognized in MEALIE_TOOLSETS. Extend per opt-in PR (#8-#11). */
-export const KNOWN_TOOLSETS = ["households", "automation", "groups", "users"] as const;
+export const KNOWN_TOOLSETS = ["households", "automation", "groups", "users", "admin"] as const;
 
 /** A recognized opt-in toolset name. */
 export type ToolsetName = (typeof KNOWN_TOOLSETS)[number];

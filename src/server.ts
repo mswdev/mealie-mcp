@@ -1,6 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { MealieClient } from "./client/MealieClient.js";
 import type { ToolsetName } from "./config.js";
+import { registerAdminTools } from "./tools/admin/index.js";
 import { registerAppTools } from "./tools/app/index.js";
 import { registerCookbookTools } from "./tools/cookbooks/index.js";
 import { registerFoodsUnitsTools } from "./tools/foods-units/index.js";
@@ -55,6 +56,9 @@ export function createServer(client: MealieClient, options: ServerOptions): McpS
   }
   if (options.toolsets.has("users")) {
     registerUserTools(server, client, options);
+  }
+  if (options.toolsets.has("admin")) {
+    registerAdminTools(server, client, options);
   }
 
   return server;

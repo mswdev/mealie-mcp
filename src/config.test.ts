@@ -59,4 +59,11 @@ describe("parseToolsets", () => {
       new Set(["households", "automation", "groups", "users"]),
     );
   });
+
+  it("enables the admin toolset, alone and alongside the others", () => {
+    expect(parseToolsets("admin")).toEqual(new Set(["admin"]));
+    expect(parseToolsets("households,automation,groups,users,admin")).toEqual(
+      new Set(["households", "automation", "groups", "users", "admin"]),
+    );
+  });
 });
