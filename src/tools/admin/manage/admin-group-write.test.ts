@@ -107,6 +107,26 @@ describe("adminGroupWriteHandler", () => {
     });
   });
 
+  it("fills all three pointers even when the fetched base is null and the overlay partial", async () => {
+    const client = fakeClient({
+      get: { ...CURRENT_GROUP, aiProviderSettings: null },
+      put: CURRENT_GROUP,
+    });
+
+    await adminGroupWriteHandler(client, {
+      action: "update",
+      item_id: "g1",
+      changes: { aiProviderSettings: { defaultProviderId: "p-new" } },
+    });
+
+    const sent = client.calls[1]?.body as Record<string, unknown>;
+    expect(sent.aiProviderSettings).toEqual({
+      defaultProviderId: "p-new",
+      audioProviderId: null,
+      imageProviderId: null,
+    });
+  });
+
   it("refuses update without item_id or changes — no client call", async () => {
     const client = fakeClient();
 

@@ -120,13 +120,27 @@ function buildUpdateBody(
     );
   }
   if (changes.aiProviderSettings !== undefined) {
-    body.aiProviderSettings = mergeOntoFields(
+    body.aiProviderSettings = mergeProviderSettings(
       current.aiProviderSettings,
       changes.aiProviderSettings,
-      AI_SETTINGS_FIELDS,
     );
   }
   return body;
+}
+
+/**
+ * Builds a complete three-pointer settings body. The pointers are
+ * required-WITHOUT-default upstream, so every key must be present even when
+ * the fetched base is null (fresh group) and the overlay partial — missing
+ * values fall back to null. `key in overlay` (not truthiness) so an explicit
+ * null clears a pointer.
+ */
+function mergeProviderSettings(current: unknown, changes: unknown): Record<string, unknown> {
+  const base = (current ?? {}) as Record<string, unknown>;
+  const overlay = (changes ?? {}) as Record<string, unknown>;
+  return Object.fromEntries(
+    AI_SETTINGS_FIELDS.map((key) => [key, (key in overlay ? overlay[key] : base[key]) ?? null]),
+  );
 }
 
 /** Merges current + changed nested objects, projected onto an Update field set. */
