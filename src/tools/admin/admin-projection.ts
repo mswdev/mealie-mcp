@@ -15,6 +15,9 @@ export type AdminHousehold = components["schemas"]["HouseholdInDB"];
 /** An admin-visible group, as returned by the /api/admin/groups endpoints. */
 export type AdminGroup = components["schemas"]["GroupInDB"];
 
+/** An AI provider, as returned by the admin ai-provider endpoints (no apiKey). */
+export type AdminAiProvider = components["schemas"]["AIProviderOut"];
+
 /** dbUrl is a DB connection string that may embed credentials — never surfaced. */
 const ABOUT_REDACTED_FIELDS = ["dbUrl"] as const;
 
@@ -47,6 +50,12 @@ const HOUSEHOLD_CONCISE_FIELDS = ["id", "name", "slug", "groupId", "group", "pre
 
 /** Fields kept in a group's concise projection (nested lists trimmed). */
 const GROUP_CONCISE_FIELDS = ["id", "name", "slug", "preferences"] as const;
+
+/** Fields kept in a provider's concise projection (matches the groups toolset). */
+const PROVIDER_CONCISE_FIELDS = ["id", "name", "model", "baseUrl"] as const;
+
+/** Defensive: never echo the write-only apiKey even if a stray value appears. */
+const PROVIDER_REDACTED_FIELDS = ["apiKey"] as const;
 
 /**
  * Keeps only the named fields of a record (no `delete`, no destructure-discards — Biome).
@@ -135,4 +144,21 @@ export function projectAdminGroup(
   const source = group as unknown as Record<string, unknown>;
   if (format === "detailed") return source;
   return pickFields(source, GROUP_CONCISE_FIELDS);
+}
+
+/**
+ * Projects an AI provider for output. The apiKey secret is never present in
+ * AIProviderOut and is defensively dropped here even if a stray value appears.
+ *
+ * @param provider - The full AIProviderOut object
+ * @param format - "concise" trims to id/name/model/baseUrl; "detailed" returns everything except apiKey
+ * @returns The projected provider as a plain record
+ */
+export function projectAdminProvider(
+  provider: AdminAiProvider,
+  format: "concise" | "detailed",
+): Record<string, unknown> {
+  const source = provider as unknown as Record<string, unknown>;
+  if (format === "detailed") return omitFields(source, PROVIDER_REDACTED_FIELDS);
+  return pickFields(source, PROVIDER_CONCISE_FIELDS);
 }
