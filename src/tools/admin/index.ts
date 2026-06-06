@@ -13,6 +13,8 @@ import { registerAdminAbout } from "./site/admin-about.js";
 import { registerAdminBackupGet } from "./site/admin-backup-get.js";
 import { registerAdminBackupRestore } from "./site/admin-backup-restore.js";
 import { registerAdminBackupWrite } from "./site/admin-backup-write.js";
+import { registerAdminMaintenanceClean } from "./site/admin-maintenance-clean.js";
+import { registerAdminMaintenanceGet } from "./site/admin-maintenance-get.js";
 
 /** Options controlling which admin tools are registered. */
 export type RegisterOptions = { readOnly: boolean };
@@ -40,6 +42,7 @@ export function registerAdminTools(
   registerAdminGroupGet(server, client);
   registerAdminAiProviderGet(server, client);
   registerAdminBackupGet(server, client);
+  registerAdminMaintenanceGet(server, client);
 
   if (options.readOnly) return;
   // Writes (stripped under read-only).
@@ -50,4 +53,5 @@ export function registerAdminTools(
   registerAdminAiProviderWrite(server, client);
   registerAdminBackupWrite(server, client);
   registerAdminBackupRestore(server, client);
+  registerAdminMaintenanceClean(server, client);
 }
