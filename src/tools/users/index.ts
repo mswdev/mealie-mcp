@@ -1,6 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { MealieClient } from "../../client/MealieClient.js";
 import { registerUserApiTokenWrite } from "./user-api-token-write.js";
+import { registerUserAvatarUpload } from "./user-avatar-upload.js";
 import { registerUserMe } from "./user-me.js";
 import { registerUserPasswordWrite } from "./user-password-write.js";
 import { registerUserRatingsGet } from "./user-ratings-get.js";
@@ -37,4 +38,5 @@ export function registerUserTools(
   registerUserApiTokenWrite(server, client);
   registerUserPasswordWrite(server, client);
   registerUserRegister(server, client);
+  registerUserAvatarUpload(server, client);
 }
