@@ -12,6 +12,9 @@ export type SuccessResponse = components["schemas"]["SuccessResponse"];
 /** An admin-visible household, as returned by the /api/admin/households endpoints. */
 export type AdminHousehold = components["schemas"]["HouseholdInDB"];
 
+/** An admin-visible group, as returned by the /api/admin/groups endpoints. */
+export type AdminGroup = components["schemas"]["GroupInDB"];
+
 /** dbUrl is a DB connection string that may embed credentials — never surfaced. */
 const ABOUT_REDACTED_FIELDS = ["dbUrl"] as const;
 
@@ -41,6 +44,9 @@ const USER_CONCISE_FIELDS = [
 
 /** Fields kept in a household's concise projection (nested users/webhooks trimmed). */
 const HOUSEHOLD_CONCISE_FIELDS = ["id", "name", "slug", "groupId", "group", "preferences"] as const;
+
+/** Fields kept in a group's concise projection (nested lists trimmed). */
+const GROUP_CONCISE_FIELDS = ["id", "name", "slug", "preferences"] as const;
 
 /**
  * Keeps only the named fields of a record (no `delete`, no destructure-discards — Biome).
@@ -112,4 +118,21 @@ export function projectAdminHousehold(
   const source = household as unknown as Record<string, unknown>;
   if (format === "detailed") return source;
   return pickFields(source, HOUSEHOLD_CONCISE_FIELDS);
+}
+
+/**
+ * Projects an admin-visible group for output. Concise trims the nested
+ * category/webhook/household/user lists; detailed returns everything.
+ *
+ * @param group - The full GroupInDB object
+ * @param format - "concise" trims; "detailed" returns everything
+ * @returns The projected group as a plain record
+ */
+export function projectAdminGroup(
+  group: AdminGroup,
+  format: "concise" | "detailed",
+): Record<string, unknown> {
+  const source = group as unknown as Record<string, unknown>;
+  if (format === "detailed") return source;
+  return pickFields(source, GROUP_CONCISE_FIELDS);
 }

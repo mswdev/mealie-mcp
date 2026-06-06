@@ -1,5 +1,6 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { MealieClient } from "../../client/MealieClient.js";
+import { registerAdminGroupGet } from "./manage/admin-group-get.js";
 import { registerAdminHouseholdGet } from "./manage/admin-household-get.js";
 import { registerAdminHouseholdWrite } from "./manage/admin-household-write.js";
 import { registerAdminUserActions } from "./manage/admin-user-actions.js";
@@ -30,6 +31,7 @@ export function registerAdminTools(
   registerAdminAbout(server, client);
   registerAdminUserGet(server, client);
   registerAdminHouseholdGet(server, client);
+  registerAdminGroupGet(server, client);
 
   if (options.readOnly) return;
   // Writes (stripped under read-only).
