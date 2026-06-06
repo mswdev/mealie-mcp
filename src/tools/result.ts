@@ -1,4 +1,5 @@
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
+import { MealieApiError } from "../client/MealieApiError.js";
 import { logger } from "../logger.js";
 import { JSON_INDENT } from "./format.js";
 
@@ -32,4 +33,39 @@ export function errorResult(
     content: [{ type: "text", text: `${messagePrefix}: ${message}` }],
     isError: true,
   };
+}
+
+/**
+ * Logs and returns a sanitized MCP error result for tools whose request bodies
+ * carry secrets (passwords, reset tokens). Mealie's 422 validation errors echo
+ * the rejected input value (Pydantic v2 ValidationError.input), and even
+ * JSON-parse errors can embed response-body snippets — so neither the upstream
+ * body nor any error message may reach logs or the result text. Only the HTTP
+ * status (or the error's class name) survives.
+ *
+ * @param error - The caught error (any thrown value); its message is never surfaced
+ * @param logLabel - Stable label for the structured log line (e.g. the tool name)
+ * @param messagePrefix - Human-readable prefix for the sanitized result text
+ * @returns An MCP CallToolResult with isError set and no upstream content
+ */
+export function secretSafeErrorResult(
+  error: unknown,
+  logLabel: string,
+  messagePrefix: string,
+): CallToolResult {
+  const reason = describeWithoutBody(error);
+  logger.error({ reason }, `${logLabel} failed (detail withheld: request carries secrets)`);
+  return {
+    content: [{ type: "text", text: `${messagePrefix} (${reason})` }],
+    isError: true,
+  };
+}
+
+/** Names the failure without touching any message/body that could carry a secret. */
+function describeWithoutBody(error: unknown): string {
+  if (error instanceof MealieApiError) {
+    return `HTTP ${error.statusCode} ${error.statusText}`;
+  }
+  if (error instanceof Error) return error.name;
+  return "unknown error";
 }

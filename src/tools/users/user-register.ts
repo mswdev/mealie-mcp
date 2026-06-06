@@ -3,7 +3,7 @@ import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import * as z from "zod";
 import type { MealieClient } from "../../client/MealieClient.js";
 import type { components } from "../../types/mealie.js";
-import { errorResult, jsonResult } from "../result.js";
+import { jsonResult, secretSafeErrorResult } from "../result.js";
 import { type User, projectUser } from "./user-projection.js";
 
 const REGISTER_PATH = "/api/users/register";
@@ -64,7 +64,12 @@ export async function userRegisterHandler(
     const user = await client.post<User>(REGISTER_PATH, buildBody(args));
     return jsonResult({ registered: true, user: projectUser(user, "concise") });
   } catch (error) {
-    return errorResult(error, "user_register", "Registration failed (signup may be disabled)");
+    // Sanitized: Mealie's 422 bodies can echo the rejected password/groupToken value.
+    return secretSafeErrorResult(
+      error,
+      "user_register",
+      "Registration failed (signup may be disabled)",
+    );
   }
 }
 

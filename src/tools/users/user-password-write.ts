@@ -3,7 +3,7 @@ import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import * as z from "zod";
 import type { MealieClient } from "../../client/MealieClient.js";
 import type { components } from "../../types/mealie.js";
-import { errorResult, jsonResult } from "../result.js";
+import { jsonResult, secretSafeErrorResult } from "../result.js";
 
 const CHANGE_PATH = "/api/users/password";
 const FORGOT_PATH = "/api/users/forgot-password";
@@ -57,7 +57,8 @@ export async function userPasswordWriteHandler(
   try {
     return await dispatch(client, args);
   } catch (error) {
-    return errorResult(error, "user_password_write", "Password operation failed");
+    // Sanitized: Mealie's 422 bodies can echo the rejected password/token value.
+    return secretSafeErrorResult(error, "user_password_write", "Password operation failed");
   }
 }
 
@@ -123,7 +124,7 @@ export function registerUserPasswordWrite(server: McpServer, client: MealieClien
     {
       title: "Change/Reset My Password",
       description:
-        "Change your password (currentPassword + newPassword), request a reset email (forgot + email; needs instance SMTP), or complete a reset (reset + token/email/password/passwordConfirm). Password values are never echoed.",
+        "Change your password (currentPassword + newPassword), request a reset email (forgot + email — SENDS AN EMAIL to that address; needs instance SMTP), or complete a reset (reset + token/email/password/passwordConfirm — consumes the emailed token). Password values are never echoed.",
       inputSchema,
       annotations: { readOnlyHint: false, openWorldHint: true },
     },

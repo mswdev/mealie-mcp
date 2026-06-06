@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { MealieApiError } from "../../client/MealieApiError.js";
 import { userPasswordWriteHandler } from "./user-password-write.js";
 
 type Call = { method: string; path: string; body?: unknown };
@@ -137,5 +138,34 @@ describe("userPasswordWriteHandler", () => {
     });
 
     expect(result.isError).toBe(true);
+  });
+
+  it("never leaks a secret echoed in Mealie's 422 body into the error result", async () => {
+    const client = {
+      async put<T>(): Promise<T> {
+        // Pydantic v2 validation errors echo the rejected value (ValidationError.input).
+        throw new MealieApiError(
+          422,
+          "Unprocessable Entity",
+          "/api/users/password",
+          '{"detail":[{"msg":"too short","input":"new-secret"}]}',
+        );
+      },
+      async post<T>(): Promise<T> {
+        return undefined as T;
+      },
+    };
+
+    const result = await userPasswordWriteHandler(client, {
+      action: "change",
+      currentPassword: "old-secret",
+      newPassword: "new-secret",
+    });
+
+    expect(result.isError).toBe(true);
+    const text = (result.content[0] as { text: string }).text;
+    expect(text).not.toContain("new-secret");
+    expect(text).not.toContain("old-secret");
+    expect(text).toContain("422");
   });
 });
