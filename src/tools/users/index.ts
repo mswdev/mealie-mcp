@@ -2,6 +2,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { MealieClient } from "../../client/MealieClient.js";
 import { registerUserMe } from "./user-me.js";
 import { registerUserRatingsGet } from "./user-ratings-get.js";
+import { registerUserRatingsWrite } from "./user-ratings-write.js";
 import { registerUserSelfUpdate } from "./user-self-update.js";
 
 /** Options controlling which user tools are registered. */
@@ -29,4 +30,5 @@ export function registerUserTools(
   if (options.readOnly) return;
   // Writes (stripped under read-only).
   registerUserSelfUpdate(server, client);
+  registerUserRatingsWrite(server, client);
 }
