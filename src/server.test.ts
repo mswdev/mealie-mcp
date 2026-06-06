@@ -171,6 +171,28 @@ const USERS_WRITES = [
   "user_avatar_upload",
 ];
 
+const ADMIN_READS = [
+  "admin_about",
+  "admin_user_get",
+  "admin_household_get",
+  "admin_group_get",
+  "admin_ai_provider_get",
+  "admin_maintenance_get",
+  "admin_backup_get",
+];
+const ADMIN_WRITES = [
+  "admin_user_write",
+  "admin_user_actions",
+  "admin_household_write",
+  "admin_group_write",
+  "admin_ai_provider_write",
+  "admin_backup_write",
+  "admin_backup_restore",
+  "admin_maintenance_clean",
+  "admin_email_test",
+  "admin_debug_openai",
+];
+
 const ALL_OPTIN = [
   ...HOUSEHOLDS_READS,
   ...HOUSEHOLDS_WRITES,
@@ -180,6 +202,8 @@ const ALL_OPTIN = [
   ...GROUPS_WRITES,
   ...USERS_READS,
   ...USERS_WRITES,
+  ...ADMIN_READS,
+  ...ADMIN_WRITES,
 ];
 
 describe("opt-in toolsets", () => {
@@ -187,7 +211,14 @@ describe("opt-in toolsets", () => {
   const HOUSEHOLDS: ReadonlySet<ToolsetName> = new Set(["households"]);
   const GROUPS: ReadonlySet<ToolsetName> = new Set(["groups"]);
   const USERS: ReadonlySet<ToolsetName> = new Set(["users"]);
-  const ALL: ReadonlySet<ToolsetName> = new Set(["households", "automation", "groups", "users"]);
+  const ADMIN: ReadonlySet<ToolsetName> = new Set(["admin"]);
+  const ALL: ReadonlySet<ToolsetName> = new Set([
+    "households",
+    "automation",
+    "groups",
+    "users",
+    "admin",
+  ]);
 
   it("omits every opt-in tool when no toolset is enabled", async () => {
     const names = await listToolNames({ readOnly: false });
@@ -307,11 +338,45 @@ describe("opt-in toolsets", () => {
     expect(names).toHaveLength(28);
   });
 
-  it("composes orthogonally — all four toolsets enabled (99 full)", async () => {
+  it("exposes only the admin tools when admin is enabled", async () => {
+    const names = await listToolNames({ readOnly: false, toolsets: ADMIN });
+
+    for (const tool of [...ADMIN_READS, ...ADMIN_WRITES]) expect(names).toContain(tool);
+    for (const tool of [
+      ...HOUSEHOLDS_READS,
+      ...HOUSEHOLDS_WRITES,
+      ...AUTOMATION_READS,
+      ...AUTOMATION_WRITES,
+      ...GROUPS_READS,
+      ...GROUPS_WRITES,
+      ...USERS_READS,
+      ...USERS_WRITES,
+    ]) {
+      expect(names).not.toContain(tool);
+    }
+  });
+
+  it("adds exactly 17 opt-in tools (83 full) when admin is enabled", async () => {
+    const names = await listToolNames({ readOnly: false, toolsets: ADMIN });
+
+    // 66 default + 7 admin reads + 10 admin writes = 83
+    expect(names).toHaveLength(83);
+  });
+
+  it("strips admin writes under read-only (33 reads)", async () => {
+    const names = await listToolNames({ readOnly: true, toolsets: ADMIN });
+
+    for (const read of ADMIN_READS) expect(names).toContain(read);
+    for (const write of ADMIN_WRITES) expect(names).not.toContain(write);
+    // 26 default reads + 7 admin reads; all writes stripped
+    expect(names).toHaveLength(33);
+  });
+
+  it("composes orthogonally — all five toolsets enabled (116 full)", async () => {
     const names = await listToolNames({ readOnly: false, toolsets: ALL });
 
     for (const tool of ALL_OPTIN) expect(names).toContain(tool);
-    // 66 default + 13 households/automation + 12 groups + 8 users = 99
-    expect(names).toHaveLength(99);
+    // 66 default + 13 households/automation + 12 groups + 8 users + 17 admin = 116
+    expect(names).toHaveLength(116);
   });
 });
