@@ -171,7 +171,12 @@ describe("adminUserWriteHandler", () => {
     const client = {
       ...fakeClient(),
       async post<T>(): Promise<T> {
-        throw new MealieApiError(422, "Unprocessable Entity", "/api/admin/users", '{"input": "pw-secret"}');
+        throw new MealieApiError(
+          422,
+          "Unprocessable Entity",
+          "/api/admin/users",
+          '{"input": "pw-secret"}',
+        );
       },
     };
 
