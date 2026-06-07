@@ -37,6 +37,14 @@ describe("exploreRecipeGetHandler", () => {
     expect(body).not.toHaveProperty("comments");
   });
 
+  it("URI-encodes the recipe slug segment", async () => {
+    const calls: string[] = [];
+
+    await exploreRecipeGetHandler(fakeGetClient(calls), { group_slug: "home", slug: "a/b" });
+
+    expect(calls).toEqual(["/api/explore/groups/home/recipes/a%2Fb"]);
+  });
+
   it("adds heavy fields back via include", async () => {
     const result = await exploreRecipeGetHandler(fakeGetClient([]), {
       group_slug: "home",
