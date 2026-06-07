@@ -23,7 +23,7 @@ Set these environment variables before running:
 | `TRANSPORT` | No | `stdio` (default) or `http` |
 | `PORT` | No | HTTP port when using `TRANSPORT=http` (default: `3000`) |
 | `MEALIE_READ_ONLY` | No | When `true`/`1`/`yes`/`on`, every mutating tool (create, update, delete, import, bulk actions, etc.) is **not registered** — the server exposes reads only. Default: `false`. |
-| `MEALIE_TOOLSETS` | No | Comma-separated list of **opt-in** toolsets to enable, e.g. `households,automation,groups,users,admin`. Recognized tokens: `households`, `automation`, `groups`, `users`, `admin`. Unset → only the default tools. Unknown tokens are logged to stderr and ignored. Composes with `MEALIE_READ_ONLY` (enabled toolsets still have their writes stripped in read-only mode). |
+| `MEALIE_TOOLSETS` | No | Comma-separated list of **opt-in** toolsets to enable, e.g. `households,automation,groups,users,admin,explore`. Recognized tokens: `households`, `automation`, `groups`, `users`, `admin`, `explore`. Unset → only the default tools. Unknown tokens are logged to stderr and ignored. Composes with `MEALIE_READ_ONLY` (enabled toolsets still have their writes stripped in read-only mode; `explore` is all reads and survives intact). |
 
 ## App Tools
 
@@ -139,6 +139,14 @@ The **site-operator surface** (`/api/admin/*` — Mealie's *Manage Users/Househo
 - **Write:** `admin_user_write`, `admin_household_write`, `admin_group_write`, `admin_ai_provider_write` (each `action: create | update | delete`, delete `confirm`-gated), `admin_user_actions` (`action: unlock | password_reset_token`), `admin_backup_write` (`action: create | upload | delete`), `admin_backup_restore`, `admin_maintenance_clean` (`target: images | temp | recipe_folders`, `confirm`-gated), `admin_email_test`, `admin_debug_openai`
 
 > **`admin_backup_restore` OVERWRITES the entire instance** (all recipes, users, settings). It is double-gated: `confirm: true` **and** `confirm_file_name` re-typed to exactly match `file_name`. Maintenance cleans delete files irreversibly (Mealie itself has no confirmation flag — the gate here is the only one). **Secrets:** the admin user-create password and AI-provider `apiKey` are never echoed (and error messages for those tools are sanitized to the HTTP status); the password-reset token is returned **exactly once** — deliver it out-of-band; `admin_about` redacts the DB connection string. `admin_email_test` sends a real email; `admin_debug_openai` fires a real (possibly billable) AI-provider request. Updates are full-replace PUTs done as fetch-merge — the user update round-trips the full account object and **cannot change passwords** (use `admin_user_actions`).
+
+### `explore` — Public Recipe Browsing (5 tools)
+
+The **public browse surface** (`/api/explore/groups/{group_slug}/...`) — a read-only window onto a **public** group's recipes, cookbooks, organizers, foods, and households. All five tools are reads, so this is the only toolset that survives `MEALIE_READ_ONLY` intact:
+
+- **Read:** `explore_recipe_search` (recipe_search's filters plus a `cookbook` filter), `explore_recipe_get`, `explore_recipe_suggestions`, `explore_list` / `explore_get` (`type: cookbook | category | tag | tool | food | household`)
+
+> Every tool requires `group_slug` — find it in the instance's public URL (`/g/{slug}`), via `group_self_get` (groups toolset), or `admin_about`'s `defaultGroupSlug` (admin toolset). The target group must have public access enabled: **private and nonexistent groups both return the same 404**. Lookups are id-based except households (by household slug) and recipes (by recipe slug) — the public API offers exactly one lookup per type. Foods have no slug, so their concise items are `{id, name, labelId}`.
 
 ## Usage with MCP Clients
 

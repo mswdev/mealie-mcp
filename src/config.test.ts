@@ -66,4 +66,11 @@ describe("parseToolsets", () => {
       new Set(["households", "automation", "groups", "users", "admin"]),
     );
   });
+
+  it("enables the explore toolset, alone and alongside the others", () => {
+    expect(parseToolsets("explore")).toEqual(new Set(["explore"]));
+    expect(parseToolsets("households,automation,groups,users,admin,explore")).toEqual(
+      new Set(["households", "automation", "groups", "users", "admin", "explore"]),
+    );
+  });
 });

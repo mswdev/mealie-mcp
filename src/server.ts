@@ -4,6 +4,7 @@ import type { ToolsetName } from "./config.js";
 import { registerAdminTools } from "./tools/admin/index.js";
 import { registerAppTools } from "./tools/app/index.js";
 import { registerCookbookTools } from "./tools/cookbooks/index.js";
+import { registerExploreTools } from "./tools/explore/index.js";
 import { registerFoodsUnitsTools } from "./tools/foods-units/index.js";
 import { registerGroupTools } from "./tools/groups/index.js";
 import { registerHouseholdAutomationTools } from "./tools/household-automation/index.js";
@@ -59,6 +60,10 @@ export function createServer(client: MealieClient, options: ServerOptions): McpS
   }
   if (options.toolsets.has("admin")) {
     registerAdminTools(server, client, options);
+  }
+  // Explore is all reads — its registrar takes no options and survives read-only.
+  if (options.toolsets.has("explore")) {
+    registerExploreTools(server, client);
   }
 
   return server;
