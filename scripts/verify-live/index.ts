@@ -1,8 +1,14 @@
 import { resolve } from "node:path";
 import { allResults, expect, runCheck, snippet } from "./assert.js";
+import * as admin from "./checks/admin.js";
 import * as catalog from "./checks/catalog.js";
 import type { CheckContext } from "./checks/context.js";
+import * as cookingLoop from "./checks/cooking-loop.js";
+import * as explore from "./checks/explore.js";
+import * as groups from "./checks/groups.js";
+import * as householdsAutomation from "./checks/households-automation.js";
 import * as recipes from "./checks/recipes.js";
+import * as users from "./checks/users.js";
 import * as docker from "./docker.js";
 import { connect } from "./mcp.js";
 import { groupSlug, login, makeExplorable, mintApiToken } from "./mealie-rest.js";
@@ -60,9 +66,17 @@ async function main(): Promise<void> {
       scratch: {},
     };
 
+    // Non-destructive → explore → destructive admin LAST (restore reverts the instance).
     await smoke(ctx);
     await recipes.run(ctx);
     await catalog.run(ctx);
+    await cookingLoop.run(ctx);
+    await householdsAutomation.run(ctx);
+    await groups.run(ctx);
+    await users.run(ctx);
+    await explore.run(ctx);
+    await admin.runReads(ctx);
+    await admin.runDestructive(ctx);
 
     await mcp.close();
     writeReport({ ...version, specParity: parity });

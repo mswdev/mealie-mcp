@@ -27,6 +27,32 @@ function row(r: CheckResult): string {
   return `| ${ICON[r.status]} | ${r.id} | ${r.owedPr} | ${r.title} | ${cell(r.detail)} |`;
 }
 
+/** Durable findings from the live pass: the one real bug fixed, plus Mealie behaviors confirmed/discovered. */
+const FINDINGS = [
+  "## Findings",
+  "",
+  "**Bug found & fixed (TDD):**",
+  "",
+  "- `recipe_update` reported failure on a rename. Mealie regenerates a recipe's slug when `name` changes, so the handler's post-update re-fetch by the *original* slug 404'd. Fixed to return the PUT/PATCH response (the updated recipe, with the new slug). Regression test in `recipe-update.test.ts`.",
+  "",
+  "**Quirks-ledger confirmed against the live instance:**",
+  "",
+  "- **Bare-slug create** — `POST /api/recipes` returns a bare quoted slug string; `recipe_create` re-fetches into a full object (C-RECIPE-CREATE).",
+  "- **Error-on-200** — `SuccessResponse{error}` (group_seed, backups, maintenance) and `EmailSuccess{success}` (email test) both map to `isError` (C-SEED, C-MAINT-CLEAN, C-EMAIL-TEST).",
+  "- **Integer meal-plan ids** — `ReadPlanEntry.id` is a number, not a uuid (C-MEALPLAN).",
+  "- **`EmailInitationResponse`** (verbatim upstream typo) — surfaced with its `{success}` shape (C-INVITE).",
+  "- **`secretSafeErrorResult`** — a real 422 carrying a submitted password surfaces status-only, no secret leak (C-USER-PW); write-only `apiKey` never echoed (C-AIPROVIDER, C-ADMIN-AIKEY); reset/api tokens shown exactly once (C-ADMIN-ACTIONS, C-USER-TOKEN).",
+  "",
+  "**Mealie behaviors to be aware of (not bugs in this server):**",
+  "",
+  "- Uploaded recipe assets do not appear in `recipe.recipeAssets` on a GET; the asset POST returns the descriptor (read assets via `recipe_media`).",
+  "- `householdsWithTool` is not settable via the organizer/tool endpoints (create and PUT both return `[]`); it is managed per-household.",
+  "- `GET /api/groups/reports` returns rows only when `report_type` is supplied; unfiltered it is empty.",
+  "- Mealie normalizes a webhook `scheduledTime` from `HH:MM` to `HH:MM:SS`.",
+  "- A backup restore can momentarily restart the instance; the harness waits for `/api/app/about` to return before continuing.",
+  "",
+];
+
 /** Run metadata recorded in the report header. */
 export type ReportMeta = { pinnedTag: string; runningVersion: string; specParity: string };
 
@@ -50,6 +76,7 @@ export function writeReport(meta: ReportMeta): void {
     "|---|---|---|---|---|",
     ...rows.map(row),
     "",
+    ...FINDINGS,
     "## Teardown",
     "",
     "`docker compose down -v` runs automatically in the harness `finally`. The container is disposable — never aimed at a real instance.",

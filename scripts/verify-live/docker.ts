@@ -22,6 +22,21 @@ export function down(): void {
   compose(["down", "-v"]);
 }
 
+/** Polls /api/app/about until it returns 200 (the instance is ready again). Used after a
+ *  backup restore, which can momentarily restart Mealie. Resolves false on timeout. */
+export async function waitHealthy(attempts = 30): Promise<boolean> {
+  for (let i = 0; i < attempts; i += 1) {
+    try {
+      const res = await fetch(`${MEALIE_URL}/api/app/about`);
+      if (res.ok) return true;
+    } catch {
+      // not up yet
+    }
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+  }
+  return false;
+}
+
 /** Reads the actual running version from /api/app/about (image tags can mismatch internal version). */
 async function runningVersion(): Promise<string> {
   const res = await fetch(`${MEALIE_URL}/api/app/about`);
