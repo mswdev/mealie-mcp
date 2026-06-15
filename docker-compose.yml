@@ -1,0 +1,17 @@
+# Disposable local Mealie for live verification (PR #12). NOT for production.
+# Pinned, SQLite, ephemeral (no named volume), bound to localhost on a non-standard port.
+# Teardown wipes everything:  docker compose down -v
+services:
+  mealie:
+    image: ghcr.io/mealie-recipes/mealie:v3.19.2
+    container_name: mealie-verify-live
+    restart: "no"
+    ports:
+      - "127.0.0.1:9925:9000" # host 127.0.0.1:9925 -> container API_PORT 9000 (do NOT change container side)
+    environment:
+      ALLOW_SIGNUP: "true" # enables user_register live-test (still needs a group invite token)
+      BASE_URL: "http://localhost:9925"
+      TZ: "UTC"
+      LOG_LEVEL: "info"
+    # No volumes: -> image's VOLUME /app/data uses an auto-created anonymous volume; down -v wipes it -> fresh DB re-seeds the default admin.
+    # The image ships a HEALTHCHECK (probes 127.0.0.1:9000/api/app/about) -> `up --wait` works out of the box.
