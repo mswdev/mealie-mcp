@@ -1,6 +1,8 @@
 import { resolve } from "node:path";
 import { allResults, expect, runCheck, snippet } from "./assert.js";
+import * as catalog from "./checks/catalog.js";
 import type { CheckContext } from "./checks/context.js";
+import * as recipes from "./checks/recipes.js";
 import * as docker from "./docker.js";
 import { connect } from "./mcp.js";
 import { groupSlug, login, makeExplorable, mintApiToken } from "./mealie-rest.js";
@@ -12,18 +14,27 @@ const EXPECTED_ALL_TOOLSETS = 121;
 
 /** Smoke checks proving the bootstrap → MCP → container pipeline is sound. */
 async function smoke(ctx: CheckContext): Promise<void> {
-  await runCheck({ id: "C-SMOKE-TOOLS", owedPr: "#7-#11", title: "all six toolsets expose 121 tools" }, async () => {
-    const names = await ctx.mcp.listToolNames();
-    expect(names.length === EXPECTED_ALL_TOOLSETS, `expected ${EXPECTED_ALL_TOOLSETS} tools, got ${names.length}`);
-    return `listTools returned ${names.length} tools`;
-  });
-  await runCheck({ id: "C-SMOKE-SEARCH", owedPr: "#2", title: "recipe_search reaches the live API authed" }, async () => {
-    const result = await ctx.mcp.call("recipe_search", { perPage: 5 });
-    expect(!result.isError, `recipe_search errored: ${result.text}`);
-    const body = result.json as { items?: unknown[]; total?: number };
-    expect(Array.isArray(body.items), `no items array: ${snippet(result.json)}`);
-    return `total=${body.total}, items=${body.items?.length}`;
-  });
+  await runCheck(
+    { id: "C-SMOKE-TOOLS", owedPr: "#7-#11", title: "all six toolsets expose 121 tools" },
+    async () => {
+      const names = await ctx.mcp.listToolNames();
+      expect(
+        names.length === EXPECTED_ALL_TOOLSETS,
+        `expected ${EXPECTED_ALL_TOOLSETS} tools, got ${names.length}`,
+      );
+      return `listTools returned ${names.length} tools`;
+    },
+  );
+  await runCheck(
+    { id: "C-SMOKE-SEARCH", owedPr: "#2", title: "recipe_search reaches the live API authed" },
+    async () => {
+      const result = await ctx.mcp.call("recipe_search", { perPage: 5 });
+      expect(!result.isError, `recipe_search errored: ${result.text}`);
+      const body = result.json as { items?: unknown[]; total?: number };
+      expect(Array.isArray(body.items), `no items array: ${snippet(result.json)}`);
+      return `total=${body.total}, items=${body.items?.length}`;
+    },
+  );
 }
 
 /** Runs the full live-verification pass. Teardown is unconditional. */
@@ -33,7 +44,9 @@ async function main(): Promise<void> {
   try {
     const version = await docker.reportVersion();
     const parity = await specParity();
-    process.stdout.write(`Mealie ${version.runningVersion} (tag ${version.pinnedTag}) · spec parity: ${parity}\n`);
+    process.stdout.write(
+      `Mealie ${version.runningVersion} (tag ${version.pinnedTag}) · spec parity: ${parity}\n`,
+    );
 
     const bearer = await login();
     const token = await mintApiToken(bearer);
@@ -48,6 +61,8 @@ async function main(): Promise<void> {
     };
 
     await smoke(ctx);
+    await recipes.run(ctx);
+    await catalog.run(ctx);
 
     await mcp.close();
     writeReport({ ...version, specParity: parity });

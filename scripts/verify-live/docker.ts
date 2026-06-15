@@ -14,7 +14,9 @@ export function up(): void {
 /** Tears down the container AND its anonymous volume — unless KEEP is set (iteration). */
 export function down(): void {
   if (KEEP) {
-    process.stdout.write("VERIFY_LIVE_KEEP=1 — leaving the container up (run `docker compose down -v` to wipe).\n");
+    process.stdout.write(
+      "VERIFY_LIVE_KEEP=1 — leaving the container up (run `docker compose down -v` to wipe).\n",
+    );
     return;
   }
   compose(["down", "-v"]);

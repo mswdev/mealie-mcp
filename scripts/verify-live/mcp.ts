@@ -1,5 +1,8 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { getDefaultEnvironment, StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import {
+  StdioClientTransport,
+  getDefaultEnvironment,
+} from "@modelcontextprotocol/sdk/client/stdio.js";
 import { MEALIE_URL, SERVER_ENTRY } from "./config.js";
 
 /** All opt-in toolsets, so one client can reach every tool under test. */

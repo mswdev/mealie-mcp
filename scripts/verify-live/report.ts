@@ -1,5 +1,5 @@
 import { writeFileSync } from "node:fs";
-import { allResults, type CheckResult } from "./assert.js";
+import { type CheckResult, allResults } from "./assert.js";
 import { REPORT_PATH } from "./config.js";
 
 const ICON = { pass: "✅", fail: "❌", diverge: "⚠️", skip: "⏭️" } as const;
