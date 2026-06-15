@@ -4,7 +4,7 @@ An MCP (Model Context Protocol) server for [Mealie](https://mealie.io) — the s
 
 > **Status: early, growing fast.** The server ships the **entire default surface** — Recipes, Meal Plans, Shopping Lists, Cookbooks, Organizers (categories/tags/tools), Foods & Units, and App info. The goal is full coverage of the Mealie REST API — other Mealie MCPs stall at a handful of endpoints, and this one is built to go the distance.
 >
-> **Live-verified against Mealie `v3.19.2`.** Every tool is exercised end-to-end through the real server against a disposable Mealie instance — `npm run verify:live` spins one up with Docker, runs the checklist, and tears it down. See [the verification report](docs/plans/2026-06-15-live-verification-report.md).
+> **Live-verified against Mealie `v3.19.2`.** Every owed behavior from PRs #2–#11 is exercised end-to-end through the real server (49 behavior checks) against a disposable Mealie instance — `npm run verify:live` spins one up with Docker, runs the checklist, and tears it down. See [the verification report](docs/plans/2026-06-15-live-verification-report.md).
 
 ## Installation
 

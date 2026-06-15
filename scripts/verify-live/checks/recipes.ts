@@ -1,7 +1,9 @@
+import { writeFileSync } from "node:fs";
 import { expect, runCheck, snippet } from "../assert.js";
+import { MEALIE_URL } from "../config.js";
 import type { CheckContext } from "./context.js";
 
-/** PR #2/#3 owed: recipe reads + writes (create/update/delete), multipart image/asset, hermetic import. */
+/** PR #2/#3 owed: recipe reads + writes (create/update/delete), multipart image/asset/zip, hermetic import. */
 export async function run(ctx: CheckContext): Promise<void> {
   await readProjection(ctx);
   await create(ctx);
@@ -9,6 +11,7 @@ export async function run(ctx: CheckContext): Promise<void> {
   await deleteConfirm(ctx);
   await imageUpload(ctx);
   await assetUpload(ctx);
+  await zipRoundTrip(ctx);
   await hermeticImport(ctx);
 }
 
@@ -203,6 +206,69 @@ async function assetUpload(ctx: CheckContext): Promise<void> {
       });
       expect(fetched.ok, `asset not retrievable at ${url} (HTTP ${fetched.status})`);
       return `multipart asset uploaded and retrieved 200 via recipe_media: ${fileName}`;
+    },
+  );
+}
+
+/** Polls list_jobs until an export job id appears that wasn't there before (bounded). */
+async function awaitExportId(ctx: CheckContext, before: Set<string>): Promise<string | undefined> {
+  for (let i = 0; i < 15; i += 1) {
+    const jobs = await ctx.mcp.call("recipe_export", { action: "list_jobs" });
+    const list = (jobs.json as Array<{ id: string }>) ?? [];
+    const fresh = list.find((j) => !before.has(j.id));
+    if (fresh) return fresh.id;
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+  }
+  return undefined;
+}
+
+/** recipe zip round-trip: export a recipe -> bridge the token download via REST -> delete the
+ *  original -> import the zip -> the recipe returns. (Mealie 500s on a zip import whose slug still
+ *  exists, so the delete is required — noted as a Mealie quirk in the report.) */
+async function zipRoundTrip(ctx: CheckContext): Promise<void> {
+  await runCheck(
+    {
+      id: "C-RECIPE-ZIP",
+      owedPr: "#3",
+      title:
+        "recipe export -> zip download (REST bridge) -> delete -> recipe_import zip restores it",
+    },
+    async () => {
+      const created = await ctx.mcp.call("recipe_create", { name: "VerifyZipSource" });
+      const slug = (created.json as { slug: string }).slug;
+      const seenJobs = await ctx.mcp.call("recipe_export", { action: "list_jobs" });
+      const before = new Set(((seenJobs.json as Array<{ id: string }>) ?? []).map((j) => j.id));
+
+      const start = await ctx.mcp.call("recipe_export_run", { action: "start", recipes: [slug] });
+      expect(!start.isError, `export start failed: ${start.text}`);
+      const exportId = await awaitExportId(ctx, before);
+      if (!exportId) throw new Error("DIVERGE: export job did not appear within 15s");
+
+      const tok = await ctx.mcp.call("recipe_export", { action: "download_token", exportId });
+      const fileToken = (tok.json as { fileToken?: string }).fileToken;
+      expect(typeof fileToken === "string", `no fileToken: ${snippet(tok.json)}`);
+      const dl = await fetch(
+        `${MEALIE_URL}/api/utils/download?token=${encodeURIComponent(fileToken ?? "")}`,
+        { headers: { Authorization: `Bearer ${ctx.bearer}` } },
+      );
+      expect(dl.ok, `zip download failed: HTTP ${dl.status}`);
+      const zipPath = `${ctx.fixturesDir}/exported.zip`;
+      writeFileSync(zipPath, Buffer.from(await dl.arrayBuffer()));
+
+      // delete the original so the zip import has no slug conflict, then restore it from the zip
+      await ctx.mcp.call("recipe_delete", { slug, confirm: true });
+      expect(
+        (await ctx.mcp.call("recipe_get", { slug })).isError,
+        "original should be gone pre-import",
+      );
+      const imp = await ctx.mcp.call("recipe_import", { source: "zip", filePath: zipPath });
+      expect(!imp.isError, `zip import failed: ${imp.text}`);
+      const back = await ctx.mcp.call("recipe_get", { slug });
+      expect(
+        !back.isError && (back.json as { slug?: string }).slug === slug,
+        `recipe not restored from zip: ${back.text}`,
+      );
+      return `export -> token-bridge download -> delete -> zip import restored ${slug}`;
     },
   );
 }

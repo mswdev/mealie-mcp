@@ -46,8 +46,8 @@ async function smoke(ctx: CheckContext): Promise<void> {
 /** Runs the full live-verification pass. Teardown is unconditional. */
 async function main(): Promise<void> {
   writeSkeleton();
-  docker.up();
   try {
+    docker.up(); // inside the try so a bring-up failure still hits the finally teardown
     const version = await docker.reportVersion();
     const parity = await specParity();
     process.stdout.write(

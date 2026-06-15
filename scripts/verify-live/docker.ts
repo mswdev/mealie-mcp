@@ -44,7 +44,35 @@ async function runningVersion(): Promise<string> {
   return body.version ?? "unknown";
 }
 
-/** Returns pinned tag + actual running version for the report header. */
-export async function reportVersion(): Promise<{ pinnedTag: string; runningVersion: string }> {
-  return { pinnedTag: PINNED_IMAGE_TAG, runningVersion: await runningVersion() };
+/** Reads the immutable image digest (the tag is re-pushable; the digest is the reproducibility anchor). */
+function imageDigest(): string {
+  try {
+    const out = execFileSync(
+      "docker",
+      [
+        "image",
+        "inspect",
+        `ghcr.io/mealie-recipes/mealie:${PINNED_IMAGE_TAG}`,
+        "--format",
+        "{{index .RepoDigests 0}}",
+      ],
+      { encoding: "utf8" },
+    );
+    return out.trim() || "unknown";
+  } catch {
+    return "unknown";
+  }
+}
+
+/** Returns pinned tag + actual running version + immutable digest for the report header. */
+export async function reportVersion(): Promise<{
+  pinnedTag: string;
+  runningVersion: string;
+  digest: string;
+}> {
+  return {
+    pinnedTag: PINNED_IMAGE_TAG,
+    runningVersion: await runningVersion(),
+    digest: imageDigest(),
+  };
 }

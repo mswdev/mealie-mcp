@@ -19,10 +19,7 @@ export type McpHandle = {
 };
 
 /** Spawns dist/index.js as a stdio MCP server and returns a connected client. */
-export async function connect(
-  token: string,
-  extraEnv: Record<string, string> = {},
-): Promise<McpHandle> {
+export async function connect(token: string): Promise<McpHandle> {
   const transport = new StdioClientTransport({
     command: "node",
     args: [SERVER_ENTRY],
@@ -31,7 +28,6 @@ export async function connect(
       MEALIE_URL,
       MEALIE_API_TOKEN: token,
       MEALIE_TOOLSETS: ALL_TOOLSETS,
-      ...extraEnv,
     },
   });
   const client = new Client({ name: "verify-live", version: "0" });

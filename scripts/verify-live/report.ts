@@ -50,11 +50,17 @@ const FINDINGS = [
   "- `GET /api/groups/reports` returns rows only when `report_type` is supplied; unfiltered it is empty.",
   "- Mealie normalizes a webhook `scheduledTime` from `HH:MM` to `HH:MM:SS`.",
   "- A backup restore can momentarily restart the instance; the harness waits for `/api/app/about` to return before continuing.",
+  "- A recipe zip import (`/api/recipes/create/zip`) returns **500** when the recipe's slug already exists (it does not suffix/409); the round-trip deletes the original first.",
   "",
 ];
 
 /** Run metadata recorded in the report header. */
-export type ReportMeta = { pinnedTag: string; runningVersion: string; specParity: string };
+export type ReportMeta = {
+  pinnedTag: string;
+  runningVersion: string;
+  digest: string;
+  specParity: string;
+};
 
 /** Writes the final report from collected results + run metadata. */
 export function writeReport(meta: ReportMeta): void {
@@ -67,10 +73,11 @@ export function writeReport(meta: ReportMeta): void {
     "# PR #12 — Live Verification Report",
     "",
     `**Image:** \`ghcr.io/mealie-recipes/mealie:${meta.pinnedTag}\` · **Running version:** \`${meta.runningVersion}\``,
+    `**Image digest:** \`${meta.digest}\``,
     `**Spec parity:** ${meta.specParity}`,
     `**Tally:** ${counts.pass ?? 0} pass · ${counts.fail ?? 0} fail · ${counts.diverge ?? 0} diverge · ${counts.skip ?? 0} skip`,
     "",
-    "Each check re-fetches and asserts the named owed behavior — a pass would FAIL if the guarded bug were present.",
+    "Most checks re-fetch and assert the named owed behavior; the success-mapping checks (C-SEED, C-MAINT-CLEAN, C-EMAIL-TEST, C-AVATAR, C-MIGRATION) assert the synthesized error-on-200 / success mapping rather than re-fetched state. Either way, a pass would FAIL if the guarded bug were present.",
     "",
     "| | ID | Owed PR | Check | Evidence / detail |",
     "|---|---|---|---|---|",

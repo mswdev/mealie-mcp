@@ -18,7 +18,7 @@ async function list(ctx: CheckContext): Promise<void> {
     {
       id: "C-EXPLORE-LIST",
       owedPr: "#11",
-      title: "explore_list food branch projects {id,name,labelId}",
+      title: "explore_list food branch {id,name,labelId} + explore_get by id",
     },
     async () => {
       const lbl = await ctx.mcp.call("label_write", {
@@ -41,7 +41,20 @@ async function list(ctx: CheckContext): Promise<void> {
         !("slug" in (f as object)),
         "food item unexpectedly carries slug (generic projection leaked)",
       );
-      return `food branch projected {id,name,labelId}; labelId=${labelId}`;
+
+      // explore_get (the 5th explore tool) — fetch the same food by id, type-routed.
+      const one = await ctx.mcp.call("explore_get", {
+        type: "food",
+        group_slug: ctx.groupSlug,
+        id: foodId,
+      });
+      expect(!one.isError, `explore_get food failed: ${one.text}`);
+      const got = one.json as { id?: string; labelId?: string };
+      expect(
+        got.id === foodId && got.labelId === labelId,
+        `explore_get food mismatch: ${snippet(one.json)}`,
+      );
+      return `food branch projected {id,name,labelId}; explore_get by id returned the food`;
     },
   );
 }

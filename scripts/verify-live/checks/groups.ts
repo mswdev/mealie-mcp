@@ -98,31 +98,31 @@ async function aiProvider(ctx: CheckContext): Promise<void> {
         `apiKey leaked or update failed: ${upd.text}`,
       );
 
-      const before = await ctx.mcp.call("group_ai_provider_get", {});
-      const wasAudio = (before.json as { audioProviderId?: unknown }).audioProviderId;
+      // Seed a NON-NULL audio pointer first, so the survival assertion is not vacuous (null===null):
+      // a non-merging full-replace on the defaultProviderId-only update would reset audio to null.
+      await ctx.mcp.call("group_ai_provider_settings_update", {
+        changes: { audioProviderId: pid },
+      });
       const setUpd = await ctx.mcp.call("group_ai_provider_settings_update", {
         changes: { defaultProviderId: pid },
       });
       expect(!setUpd.isError, `settings update failed: ${setUpd.text}`);
       const after = await ctx.mcp.call("group_ai_provider_get", {});
-      const body = after.json as { defaultProviderId?: string; audioProviderId?: unknown };
+      const body = after.json as { defaultProviderId?: string; audioProviderId?: string };
       expect(body.defaultProviderId === pid, "defaultProviderId did not apply");
       expect(
-        JSON.stringify(body.audioProviderId) === JSON.stringify(wasAudio),
-        `audioProviderId pointer reset: ${snippet(after.json)}`,
+        body.audioProviderId === pid,
+        `seeded audioProviderId reset by the defaultProviderId-only update: ${snippet(after.json)}`,
       );
       await ctx.mcp.call("group_ai_provider_settings_update", {
-        changes: {
-          defaultProviderId:
-            (before.json as { defaultProviderId?: string }).defaultProviderId ?? null,
-        },
+        changes: { defaultProviderId: null, audioProviderId: null },
       });
       await ctx.mcp.call("group_ai_provider_write", {
         action: "delete",
         provider_id: pid,
         confirm: true,
       });
-      return "apiKey never echoed (create+update); settings pointer fetch-merge preserved audio";
+      return "apiKey never echoed (create+update); seeded audioProviderId survived a defaultProviderId-only update";
     },
   );
 }
@@ -187,7 +187,13 @@ async function report(ctx: CheckContext): Promise<void> {
       title: "group_report list {items,count} + confirm-gated synth delete",
     },
     async () => {
-      // Mealie's report list returns rows only when report_type is supplied (verified live);
+      // Mealie's report list returns rows ONLY when report_type is supplied — assert the
+      // unfiltered list is empty (backs the documented behavior), then the filtered one has rows.
+      const unfiltered = await ctx.mcp.call("group_report_get", {});
+      expect(
+        ((unfiltered.json as { items?: unknown[] }).items?.length ?? 0) === 0,
+        `unfiltered report list expected empty: ${snippet(unfiltered.json)}`,
+      );
       // C-MIGRATION created a migration report.
       const listed = await ctx.mcp.call("group_report_get", { report_type: "migration" });
       const body = listed.json as {
