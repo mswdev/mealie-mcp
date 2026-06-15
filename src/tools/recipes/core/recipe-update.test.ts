@@ -8,7 +8,7 @@ function fakeClient(current: Record<string, unknown>, captured: Captured) {
     captured.method = method;
     captured.path = path;
     captured.body = body;
-    return undefined as T;
+    return body as T; // Mealie's PUT/PATCH return the updated recipe
   };
   return {
     get: async <T>(): Promise<T> => current as T,
@@ -58,6 +58,32 @@ describe("recipeUpdateHandler", () => {
     const body = parse(result);
     expect(body.slug).toBe("soup");
     expect(body.recipeIngredient).toBeUndefined(); // concise
+  });
+
+  it("returns the renamed recipe from the write response when the slug changes", async () => {
+    // Mealie regenerates the slug when `name` changes; the PUT/PATCH response carries
+    // the updated recipe (new slug), but the OLD slug then 404s. The handler must use
+    // the write response, not re-fetch the now-stale old slug.
+    let renamed = false;
+    const client = {
+      get: async <T>(): Promise<T> => {
+        if (renamed) throw new Error("Mealie API error 404 (Not Found): No Entry Found");
+        return { ...CURRENT } as T;
+      },
+      put: async <T>(): Promise<T> => undefined as T,
+      patch: async <T>(_path: string, body: unknown): Promise<T> => {
+        renamed = true;
+        return { ...(body as Record<string, unknown>), slug: "soup-renamed" } as T;
+      },
+    };
+
+    const result = await recipeUpdateHandler(client, {
+      slug: "soup",
+      changes: { name: "Soup Renamed" },
+    });
+
+    expect(result.isError).toBeUndefined();
+    expect(parse(result).slug).toBe("soup-renamed");
   });
 
   it("returns isError when the client throws", async () => {

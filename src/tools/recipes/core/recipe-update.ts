@@ -31,7 +31,9 @@ type UpdateArgs = {
  * Handles recipe_update: fetches the current recipe, merges the requested changes
  * onto it, then sends the full merged object. Mealie's PUT and PATCH both perform
  * full-object replacement, so sending only the changed fields would wipe the rest —
- * the fetch-merge guards against that data loss.
+ * the fetch-merge guards against that data loss. The write response (the updated
+ * recipe) is returned directly: renaming regenerates the slug server-side, so
+ * re-fetching by the original slug would 404.
  *
  * @param client - A MealieClient (or compatible fake)
  * @param args - Validated arguments (slug, changes, method)
@@ -46,8 +48,7 @@ export async function recipeUpdateHandler(
     const current = await client.get<RecipeDetail>(path);
     const merged = { ...(current as Record<string, unknown>), ...args.changes };
     const method = args.method ?? "patch";
-    await client[method](path, merged);
-    const updated = await client.get<RecipeDetail>(path);
+    const updated = await client[method]<RecipeDetail>(path, merged);
     return jsonResult(projectRecipe(updated, "concise", []));
   } catch (error) {
     return errorResult(error, "recipe_update", "Failed to update recipe");
