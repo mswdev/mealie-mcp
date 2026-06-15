@@ -6,8 +6,10 @@ export type RecipeDetail = components["schemas"]["Recipe-Output"];
 /** Heavy fields that can be added back onto the concise projection via `include`. */
 export type Includable = "comments" | "nutrition";
 
-/** Lightweight fields kept in the concise projection (design §1.3). */
-const CONCISE_FIELDS = [
+/** Lightweight fields kept in the concise projection (design §1.3). Exported only so the
+ *  explore toolset's duplicated copy can be drift-guarded by a test (sibling imports are
+ *  otherwise forbidden — see .claude/rules/file-organization.md). */
+export const CONCISE_FIELDS = [
   "id",
   "slug",
   "name",
