@@ -3,6 +3,8 @@
 An MCP (Model Context Protocol) server for [Mealie](https://mealie.io) — the self-hosted recipe manager. Connect any MCP-compatible AI assistant to your Mealie instance.
 
 > **Status: early, growing fast.** The server ships the **entire default surface** — Recipes, Meal Plans, Shopping Lists, Cookbooks, Organizers (categories/tags/tools), Foods & Units, and App info. The goal is full coverage of the Mealie REST API — other Mealie MCPs stall at a handful of endpoints, and this one is built to go the distance.
+>
+> **Live-verified against Mealie `v3.19.2`.** Every tool is exercised end-to-end through the real server against a disposable Mealie instance — `npm run verify:live` spins one up with Docker, runs the checklist, and tears it down. See [the verification report](docs/plans/2026-06-15-live-verification-report.md).
 
 ## Installation
 
