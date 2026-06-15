@@ -11,17 +11,17 @@ Each check re-fetches and asserts the named owed behavior — a pass would FAIL 
 | ✅ | C-SMOKE-TOOLS | #7-#11 | all six toolsets expose 121 tools | listTools returned 121 tools |
 | ✅ | C-SMOKE-SEARCH | #2 | recipe_search reaches the live API authed | total=0, items=0 |
 | ✅ | C-RECIPE-RW | #2 | recipe_get concise/detailed/include projection | search hit; concise trimmed; detailed full; include added nutrition |
-| ✅ | C-RECIPE-CREATE | #3 | recipe_create re-fetches bare slug into full object | created object id=5862616a-0fa7-40c2-82f7-dcc2dcd5083a slug=verifycreaterecipe; re-fetch matched |
+| ✅ | C-RECIPE-CREATE | #3 | recipe_create re-fetches bare slug into full object | created object id=ac59c6a7-d426-4916-a59c-7336c861f12d slug=verifycreaterecipe; re-fetch matched |
 | ✅ | C-RECIPE-UPDATE | #3 | recipe_update fetch-merge preserves recipeYield across rename | recipeYield survived rename; slug regenerated verifyupdrecipe -> verifyupdrenamed (no 422) |
 | ✅ | C-RECIPE-DELETE | #3 | recipe_delete confirm gate + {deleted:slug} + gone | confirm gate held; deleted verifydelrecipe; re-fetch 404'd |
-| ✅ | C-RECIPE-IMAGE | #3 | recipe_image multipart upload attaches image | image attached: 50 |
-| ✅ | C-RECIPE-ASSET | #3 | recipe_assets multipart upload creates the asset | multipart asset created: {"name":"VerifyNote","icon":"mdi-file","fileName":"verifynote.txt"} (recipe.recipeAssets stays null — Mealie quirk) |
+| ✅ | C-RECIPE-IMAGE | #3 | recipe_image multipart upload attaches image | image attached: 165 |
+| ✅ | C-RECIPE-ASSET | #3 | recipe_assets multipart upload retrievable via recipe_media (round-trip) | multipart asset uploaded and retrieved 200 via recipe_media: verifynote.txt |
 | ✅ | C-RECIPE-IMPORT | #3 | recipe_import html_or_json (hermetic) creates a recipe | imported recipe slug=verifyimportrecipe |
 | ✅ | C-FOOD-MERGE | #5 | food_update preserves aliases across rename | seeded aliases survived rename: [{"name":"scallion-ish"}] |
-| ✅ | C-FOOD-DELETE | #5 | food_delete confirm gate + {deleted:id} + gone | confirm gate held; deleted e346ed95-bf8f-4c9f-afe0-205867c25248; re-fetch 404'd |
+| ✅ | C-FOOD-DELETE | #5 | food_delete confirm gate + {deleted:id} + gone | confirm gate held; deleted f7c3c959-ce44-4d08-94f9-dbca4043c4e8; re-fetch 404'd |
 | ✅ | C-ORG-MERGE | #5 | organizer_update full-replace PUT accepted (rename) | rename applied; full-replace PUT accepted (householdsWithTool not Mealie-settable — see report note) |
 | ✅ | C-ORG-EMPTY | #5 | organizer_search empty_only un-enveloped + tool guard | empty_only un-enveloped (count=1); tool guard fired |
-| ✅ | C-UNIT-MERGE | #5 | unit_update preserves fraction; unit_merge removes source | fraction survived rename; merge removed source d6a6aa89-59f4-41d8-8389-438a67f9091c |
+| ✅ | C-UNIT-MERGE | #5 | unit_update preserves fraction; unit_merge removes source | fraction survived rename; merge removed source 3862220a-d7ae-48b6-92c4-94ea2de331de |
 | ✅ | C-MEALPLAN | #4 | mealplan_update preserves text across rename (integer id) | integer id=1; text survived rename |
 | ✅ | C-SHOPLIST-UPDATE | #4 | shopping_list_update round-trips listItems (no 422) + rename | rename applied; 1 item survived the Output->Input PUT |
 | ✅ | C-SHOPITEM | #4 | shopping_item create/update fetch-merge preserves note+quantity | single+bulk created; note/quantity survived; checked applied |
@@ -35,7 +35,7 @@ Each check re-fetches and asserts the named owed behavior — a pass would FAIL 
 | ✅ | C-LABEL | #8 | label_write preserves color across rename | color survived rename; detailed has all 4 fields |
 | ✅ | C-AIPROVIDER | #8 | AI provider apiKey never echoed + settings fetch-merge | apiKey never echoed (create+update); settings pointer fetch-merge preserved audio |
 | ✅ | C-SEED | #8 | group_seed maps SuccessResponse to a non-error result | seed labels mapped error:false -> success: {"seeded":"labels","message":"Seeding Successful"} |
-| ✅ | C-MIGRATION | #8 | group_start_migration confirm gate + multipart archive | confirm gate held; multipart archive uploaded; reportId=434e3732-e585-476e-a26e-6244b0e765f2 |
+| ✅ | C-MIGRATION | #8 | group_start_migration confirm gate + multipart archive | confirm gate held; multipart archive uploaded; reportId=99ed756d-6aa4-40b6-b54f-ff2103f4d35d |
 | ✅ | C-REPORT | #8 | group_report list {items,count} + confirm-gated synth delete | list un-enveloped (count=1); confirm gate; synth {deleted}; gone |
 | ✅ | C-USER-ME | #9 | user_me concise enumerates tokens (no raw value) | tokens enumerated (1); no raw values |
 | ✅ | C-USER-UPDATE | #9 | user_self_update preserves untouched whitelist fields | fullName changed; username/email survived |
@@ -43,8 +43,8 @@ Each check re-fetches and asserts the named owed behavior — a pass would FAIL 
 | ✅ | C-USER-RATINGS | #9 | user_ratings_write favorite round-trips into user_me | favorite by slug round-tripped to favorites by recipeId |
 | ✅ | C-USER-PW | #9 | user_password_write error leaks no secret (secretSafeErrorResult) | error surfaced status-only; no secret leak |
 | ✅ | C-USER-REG | #9 | user_register (public) creates an account via invite token | account created via invite token; password not echoed |
-| ✅ | C-AVATAR | #9 | user_avatar_upload multipart (profile field) | avatar multipart accepted: {"uploaded":true,"userId":"17474e81-9bac-4837-90d6-afc6a82574f0"} |
-| ✅ | C-EXPLORE-LIST | #11 | explore_list food branch projects {id,name,labelId} | food branch projected {id,name,labelId}; labelId=fb7e3b46-2323-4da9-9fec-ebb0b5cc6d14 |
+| ✅ | C-AVATAR | #9 | user_avatar_upload multipart (profile field) | avatar multipart accepted: {"uploaded":true,"userId":"724376ab-2f03-4b81-b1c4-728a194136f2"} |
+| ✅ | C-EXPLORE-LIST | #11 | explore_list food branch projects {id,name,labelId} | food branch projected {id,name,labelId}; labelId=0b0d1025-4b54-4c84-b6e3-83d40a1a95f4 |
 | ✅ | C-EXPLORE-RECIPE | #11 | explore recipe search/get/suggestions on the public surface | public search hit; concise/detailed/include correct; suggestions returned items |
 | ✅ | C-EXPLORE-HH-GUARD | #11 | explore_list household+search guard (search-specific) | household+search rejected; household (no search) allowed |
 | ✅ | C-EXPLORE-404 | #11 | private vs nonexistent group both 404 (indistinguishable) | nonexistent -> 404; private -> 404 (indistinguishable, no enumeration leak) |
@@ -53,7 +53,7 @@ Each check re-fetches and asserts the named owed behavior — a pass would FAIL 
 | ✅ | C-ADMIN-ACTIONS | #10 | admin reset-token shown-once + validation guard + unlock | reset token shown-once; missing-email guarded; unlock returned a count |
 | ✅ | C-ADMIN-AIKEY | #10 | admin AI provider apiKey never echoed | apiKey absent from create/update/read; re-supply accepted |
 | ✅ | C-BACKUP-RESTORE | #10 | backup create->delete-marker->restore brings the marker back (double gate) | double gate held; restore brought the deleted marker back (state moved) |
-| ✅ | C-BACKUP-DELETE | #10 | admin_backup_write delete confirm gate + gone | confirm gate held; backup mealie_2026.06.15.23.28.40.zip deleted and gone |
+| ✅ | C-BACKUP-DELETE | #10 | admin_backup_write delete confirm gate + gone | confirm gate held; backup mealie_2026.06.15.23.37.01.zip deleted and gone |
 | ✅ | C-MAINT-CLEAN | #10 | admin_maintenance_clean confirm gate + SuccessResponse mapping | confirm gate held; SuccessResponse error:false -> {cleaned:temp} |
 | ✅ | C-EMAIL-TEST | #10 | admin_email_test no-SMTP maps success:false -> isError | no-SMTP success:false correctly mapped to isError |
 | ✅ | C-DEBUG-OPENAI | #10 | admin_debug_openai bogus provider -> clean isError | bogus provider -> clean isError (no crash) |

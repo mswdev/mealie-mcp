@@ -171,18 +171,20 @@ async function imageUpload(ctx: CheckContext): Promise<void> {
   );
 }
 
-/** recipe_assets multipart upload creates the asset (the POST echo is the durable proof —
- *  Mealie does not reflect uploaded assets in recipe.recipeAssets on GET, verified live). */
+/** recipe_assets multipart upload, verified by a true round-trip: upload -> recipe_media URL ->
+ *  fetch the asset file (200). Mealie does not reflect assets in recipe.recipeAssets on GET, so
+ *  the media URL is the real proof the file attached. */
 async function assetUpload(ctx: CheckContext): Promise<void> {
   await runCheck(
     {
       id: "C-RECIPE-ASSET",
       owedPr: "#3",
-      title: "recipe_assets multipart upload creates the asset",
+      title: "recipe_assets multipart upload retrievable via recipe_media (round-trip)",
     },
     async () => {
       const created = await ctx.mcp.call("recipe_create", { name: "VerifyAssetRecipe" });
       const slug = (created.json as { slug: string }).slug;
+      const recipeId = (created.json as { id: string }).id;
       const up = await ctx.mcp.call("recipe_assets", {
         slug,
         filePath: `${ctx.fixturesDir}/asset.txt`,
@@ -190,12 +192,17 @@ async function assetUpload(ctx: CheckContext): Promise<void> {
         extension: "txt",
       });
       expect(!up.isError, `asset upload failed: ${up.text}`);
-      const asset = up.json as { name?: string; fileName?: string };
-      expect(
-        asset.name === "VerifyNote" && typeof asset.fileName === "string",
-        `unexpected asset echo: ${snippet(up.json)}`,
-      );
-      return `multipart asset created: ${snippet(up.json)} (recipe.recipeAssets stays null — Mealie quirk)`;
+      const fileName = (up.json as { fileName?: string }).fileName;
+      expect(typeof fileName === "string", `no fileName in asset echo: ${snippet(up.json)}`);
+
+      const media = await ctx.mcp.call("recipe_media", { recipeId, kind: "asset", fileName });
+      const url = (media.json as { url?: string }).url;
+      expect(typeof url === "string", `recipe_media gave no url: ${snippet(media.json)}`);
+      const fetched = await fetch(url ?? "", {
+        headers: { Authorization: `Bearer ${ctx.bearer}` },
+      });
+      expect(fetched.ok, `asset not retrievable at ${url} (HTTP ${fetched.status})`);
+      return `multipart asset uploaded and retrieved 200 via recipe_media: ${fileName}`;
     },
   );
 }
