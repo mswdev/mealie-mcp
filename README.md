@@ -24,6 +24,9 @@ Set these environment variables before running:
 | `MEALIE_API_TOKEN` | Yes | API token from **Mealie → Profile → API Tokens** |
 | `TRANSPORT` | No | `stdio` (default) or `http` |
 | `PORT` | No | HTTP port when using `TRANSPORT=http` (default: `3000`) |
+| `HOST` | No | HTTP bind address (default `127.0.0.1`, loopback-only). Set to `0.0.0.0` to expose on all interfaces. |
+| `MEALIE_HTTP_AUTH_TOKEN` | http only | Shared bearer token; **required** when `TRANSPORT=http` (the server refuses to start without it). Clients must send `Authorization: Bearer <token>`. |
+| `MEALIE_HTTP_ALLOWED_HOSTS` | No | Comma-separated `Host`-header allow-list for DNS-rebinding protection when binding to a non-loopback host. Localhost is always allowed. |
 | `MEALIE_READ_ONLY` | No | When `true`/`1`/`yes`/`on`, every mutating tool (create, update, delete, import, bulk actions, etc.) is **not registered** — the server exposes reads only. Default: `false`. |
 | `MEALIE_TOOLSETS` | No | Comma-separated list of **opt-in** toolsets to enable, e.g. `households,automation,groups,users,admin,explore`. Recognized tokens: `households`, `automation`, `groups`, `users`, `admin`, `explore`. Unset → only the default tools. Unknown tokens are logged to stderr and ignored. Composes with `MEALIE_READ_ONLY` (enabled toolsets still have their writes stripped in read-only mode; `explore` is all reads and survives intact). |
 
@@ -223,15 +226,22 @@ Add to `.cursor/mcp.json`:
 Run the server in HTTP mode and point ChatGPT's MCP connector at it:
 
 ```bash
-TRANSPORT=http PORT=3000 \
+TRANSPORT=http PORT=3000 HOST=0.0.0.0 \
+MEALIE_HTTP_AUTH_TOKEN=your-strong-random-token \
+MEALIE_HTTP_ALLOWED_HOSTS=mealie-mcp.example.com \
 MEALIE_URL=https://your-mealie-instance.com \
 MEALIE_API_TOKEN=your-token-here \
 npx mealie-mcp
 ```
 
-Then point the connector at `http://<your-host>:3000/mcp` — the server serves MCP only on the `/mcp` path (POST).
+Then point the connector at `http://<your-host>:3000/mcp` — the server serves MCP only on the `/mcp` path (POST) — and configure it to send `Authorization: Bearer your-strong-random-token`.
 
-> **⚠️ Security:** HTTP mode binds to `0.0.0.0` and is **unauthenticated** — anyone who can reach the port can invoke tools using your Mealie token. Run it only on a trusted network and **behind an authenticating reverse proxy** (or a tunnel that enforces auth). Inbound authentication and host allow-listing are planned for a future release. For local single-user setups, prefer the default `stdio` transport.
+> **🔒 Security (HTTP mode):** HTTP mode is **secure by default**:
+> - **Binds to `127.0.0.1`** (loopback only). Set `HOST=0.0.0.0` to expose it deliberately.
+> - **Requires bearer auth** — the server refuses to start in HTTP mode unless `MEALIE_HTTP_AUTH_TOKEN` is set. Every request must send `Authorization: Bearer <token>`; tokens are compared in constant time and never logged.
+> - **DNS-rebinding protection** — on a loopback bind, only `localhost`/`127.0.0.1`/`[::1]` `Host` headers are accepted. When binding to `0.0.0.0`, set `MEALIE_HTTP_ALLOWED_HOSTS` to your public hostname(s) to keep `Host`-header validation on (localhost stays allowed).
+>
+> Bearer auth is the primary control; `Host`-header validation is defense-in-depth. **`Origin` headers are not validated** — front internet-facing deployments with HTTPS / a reverse proxy. For local single-user setups, prefer the default `stdio` transport.
 
 ## Development
 
