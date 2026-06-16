@@ -1,7 +1,7 @@
 {
   "name": "mealie-mcp",
   "version": "0.1.0",
-  "description": "An MCP server for the Mealie recipe manager (early scaffold; aims for full Mealie REST API coverage)",
+  "description": "A full-featured MCP server for the Mealie recipe manager — full REST API coverage (259 endpoints), stdio + HTTP transports.",
   "type": "module",
   "bin": {
     "mealie-mcp": "./dist/index.js"
@@ -29,7 +29,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/mswdev/mealie-mcp"
+    "url": "git+https://github.com/mswdev/mealie-mcp.git"
   },
   "bugs": {
     "url": "https://github.com/mswdev/mealie-mcp/issues"
