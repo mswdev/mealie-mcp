@@ -1,12 +1,32 @@
 import type { Server } from "node:http";
 import { request as httpRequest } from "node:http";
 import type { AddressInfo } from "node:net";
+import type { Response } from "express";
 import { afterEach, describe, expect, it } from "vitest";
 import type { MealieClient } from "../client/MealieClient.js";
 import type { Config } from "../config.js";
 import { parseAllowedHosts } from "../config.js";
-import { buildHttpApp, shouldWarnUnprotectedBind } from "./app.js";
+import { buildHttpApp, respondInternalError, shouldWarnUnprotectedBind } from "./app.js";
 import { JSON_RPC_SERVER_ERROR } from "./json-rpc.js";
+
+type FakeResponse = Response & { statusCode: number; body: unknown };
+
+function buildFakeResponse(headersSent = false): FakeResponse {
+  const res = {
+    headersSent,
+    statusCode: 0,
+    body: undefined as unknown,
+    status(code: number) {
+      this.statusCode = code;
+      return this;
+    },
+    json(payload: unknown) {
+      this.body = payload;
+      return this;
+    },
+  };
+  return res as unknown as FakeResponse;
+}
 
 const TOKEN = "e2e-secret";
 
@@ -79,6 +99,28 @@ function send(
     req.end();
   });
 }
+
+describe("respondInternalError", () => {
+  it("sends a JSON-RPC 500 that never leaks the error detail", () => {
+    const res = buildFakeResponse();
+
+    respondInternalError(res, new Error("sensitive detail"));
+
+    expect(res.statusCode).toBe(500);
+    expect(res.body).toMatchObject({ jsonrpc: "2.0", id: null });
+    expect((res.body as { error: { code: number } }).error.code).toBe(JSON_RPC_SERVER_ERROR);
+    expect(JSON.stringify(res.body)).not.toContain("sensitive detail");
+  });
+
+  it("does not write a response once headers have already been sent", () => {
+    const res = buildFakeResponse(true);
+
+    respondInternalError(res, new Error("boom"));
+
+    expect(res.statusCode).toBe(0);
+    expect(res.body).toBeUndefined();
+  });
+});
 
 describe("shouldWarnUnprotectedBind", () => {
   it.each(["127.0.0.1", "localhost", "::1"])(

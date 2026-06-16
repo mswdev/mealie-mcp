@@ -12,6 +12,8 @@ import { jsonRpcError } from "./json-rpc.js";
 
 /** HTTP status for an unsupported HTTP method on the /mcp endpoint. */
 const HTTP_METHOD_NOT_ALLOWED = 405;
+/** HTTP status for an unexpected server-side failure handling a /mcp request. */
+const HTTP_INTERNAL_ERROR = 500;
 
 /** Bind hosts that are loopback-only, where the SDK auto-applies Host-header validation. */
 const LOOPBACK_HOSTS = new Set(["127.0.0.1", "localhost", "::1"]);
@@ -103,6 +105,20 @@ function respondMethodNotAllowed(_req: Request, res: Response): void {
 }
 
 /**
+ * Handles an unexpected rejection from the POST /mcp handler: logs it and returns a JSON-RPC
+ * 500, unless the transport has already started streaming the response. The error detail is
+ * logged but never sent to the client (it may carry upstream specifics).
+ *
+ * @param res - The Express response for the failed request
+ * @param err - The error thrown while handling the request
+ */
+export function respondInternalError(res: Response, err: unknown): void {
+  logger.error({ err }, "error handling MCP request");
+  if (res.headersSent) return;
+  res.status(HTTP_INTERNAL_ERROR).json(jsonRpcError("Internal server error"));
+}
+
+/**
  * Builds the Express app for HTTP transport: DNS-rebinding host validation (via the SDK
  * helper), bearer auth, and the /mcp routes. Does not bind a port — the caller listens.
  *
@@ -118,7 +134,11 @@ export function buildHttpApp(config: Config, client: MealieClient): Express {
   app.use(createBearerAuthMiddleware(requireAuthToken(config)));
 
   const context: HttpContext = { config, client };
-  app.post("/mcp", (req, res) => handleMcpPost(req, res, context));
+  // Express does not await a handler's returned promise, so catch rejections explicitly:
+  // surface a JSON-RPC 500 (not Express's default HTML error) and log the failure.
+  app.post("/mcp", (req, res) => {
+    handleMcpPost(req, res, context).catch((err) => respondInternalError(res, err));
+  });
   app.get("/mcp", respondMethodNotAllowed);
   app.delete("/mcp", respondMethodNotAllowed);
   return app;
