@@ -1,0 +1,1 @@
+Verification asset fixture for recipe_assets multipart upload (PR #12).

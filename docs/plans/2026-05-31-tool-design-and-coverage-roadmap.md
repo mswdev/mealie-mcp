@@ -2,7 +2,7 @@
 
 **Date:** 2026-05-31
 **Branch:** feature/recipe-read-tools → develop (PR #2)
-**Status:** Conventions + roadmap are the project standard going forward. PR #2 implements the foundation + the first two (read-only) Recipes tools.
+**Status:** Conventions + roadmap are the project standard going forward. PR #2 implements the foundation + the first two (read-only) Recipes tools. **All 259/259 operations are now mapped (PRs #1–#11).** PR #12 cleared the owed real-instance testing against a disposable Mealie `v3.19.2`: the live op-count matches (parity preflight, 259=259) and every owed read/write behavior is exercised end-to-end through the real server (49 checks; see `docs/plans/2026-06-15-live-verification-report.md`, re-runnable via `npm run verify:live`).
 
 This document captures two things so they survive across many PRs:
 1. **The tool-design conventions** (how we map Mealie's REST API to MCP tools) — settled, applies to every future domain.

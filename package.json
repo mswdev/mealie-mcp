@@ -17,6 +17,7 @@
     "format": "biome format --write .",
     "typecheck": "tsc --noEmit",
     "generate": "tsx scripts/generate-types.ts",
+    "verify:live": "tsx scripts/verify-live/index.ts",
     "prepare": "npm run build",
     "prepublishOnly": "npm run build && npm run typecheck && npm run test && npm run lint"
   },

@@ -22,6 +22,8 @@ Imports flow **downward and inward**, never upward or sideways across features.
 - **Sibling feature directories MUST NOT import from each other.** If two features need the same code, extract it to their shared parent or a `_shared/` directory.
 - **Shared modules are pulled up, never reached into.** If two features both need a utility, it belongs in their common parent — not in one reaching into the other.
 
+**Narrow exemption — test-only drift guards.** A `*.test.ts` file MAY import a constant from a sibling feature for the sole purpose of asserting that an intentionally duplicated value stays in sync (no runtime coupling is introduced — production code never makes the cross-import). The duplication itself must already be justified (e.g. `explore`'s copy of the recipe concise-field list, which cannot import from `recipes/` at runtime). Example: `src/tools/explore/recipe-concise-drift.test.ts` imports `CONCISE_FIELDS` from `recipes/recipe-projection.ts` to guard against drift.
+
 ## DO NOT MIMIC EXISTING BAD PATTERNS
 
 - **NEVER add files to a directory that already exceeds the 20-file cap.** Flag it to the user and propose a restructuring.

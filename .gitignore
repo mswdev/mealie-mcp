@@ -23,3 +23,6 @@ coverage/
 *.swp
 .idea/
 .vscode/
+
+# transient artifact written by the live-verification zip round-trip (C-RECIPE-ZIP)
+scripts/verify-live/fixtures/exported.zip

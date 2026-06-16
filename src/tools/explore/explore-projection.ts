@@ -32,8 +32,10 @@ const CONCISE_FIELDS = ["id", "slug", "name"] as const;
 /** Food concise fields — no slug exists; labelId mirrors food_search's projection. */
 const FOOD_CONCISE_FIELDS = ["id", "name", "labelId"] as const;
 
-/** Lightweight fields kept in the concise public-recipe projection (mirrors recipe_get). */
-const RECIPE_CONCISE_FIELDS = [
+/** Lightweight fields kept in the concise public-recipe projection (mirrors recipe_get).
+ *  Exported only for the drift-guard test that keeps this in sync with recipes/ (sibling
+ *  imports are otherwise forbidden — see .claude/rules/file-organization.md). */
+export const RECIPE_CONCISE_FIELDS = [
   "id",
   "slug",
   "name",
