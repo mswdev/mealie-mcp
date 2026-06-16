@@ -4,7 +4,7 @@ import type { AddressInfo } from "node:net";
 import { afterEach, describe, expect, it } from "vitest";
 import type { MealieClient } from "../client/MealieClient.js";
 import type { Config } from "../config.js";
-import { buildHttpApp } from "./app.js";
+import { buildHttpApp, shouldWarnUnprotectedBind } from "./app.js";
 
 const TOKEN = "e2e-secret";
 
@@ -70,6 +70,30 @@ function post(port: number, headers: Record<string, string>, body: string): Prom
     req.end(body);
   });
 }
+
+describe("shouldWarnUnprotectedBind", () => {
+  it.each(["127.0.0.1", "localhost", "::1"])(
+    "does not warn for loopback host %s regardless of allow-list",
+    (host) => {
+      expect(shouldWarnUnprotectedBind(host, undefined)).toBe(false);
+      expect(shouldWarnUnprotectedBind(host, ["mealie.example.com"])).toBe(false);
+    },
+  );
+
+  it.each(["0.0.0.0", "::", "192.168.1.5", "mealie.example.com"])(
+    "warns for non-loopback host %s when no allow-list is configured",
+    (host) => {
+      expect(shouldWarnUnprotectedBind(host, undefined)).toBe(true);
+    },
+  );
+
+  it.each(["0.0.0.0", "::", "192.168.1.5", "mealie.example.com"])(
+    "does not warn for non-loopback host %s once an allow-list is configured",
+    (host) => {
+      expect(shouldWarnUnprotectedBind(host, ["mealie.example.com", "localhost"])).toBe(false);
+    },
+  );
+});
 
 describe("buildHttpApp auth gate", () => {
   it("rejects a POST with no Authorization header (401)", async () => {

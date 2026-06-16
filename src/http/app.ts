@@ -13,6 +13,25 @@ import { jsonRpcError } from "./json-rpc.js";
 /** HTTP status for an unsupported HTTP method on the /mcp endpoint. */
 const HTTP_METHOD_NOT_ALLOWED = 405;
 
+/** Bind hosts that are loopback-only, where the SDK auto-applies Host-header validation. */
+const LOOPBACK_HOSTS = new Set(["127.0.0.1", "localhost", "::1"]);
+
+/**
+ * Decides whether to warn that Host-header DNS-rebinding protection is off. It is off whenever
+ * the server binds a non-loopback host (0.0.0.0, ::, or a routable IP/hostname) without an
+ * explicit allow-list — the SDK only auto-protects loopback binds. Bearer auth still applies.
+ *
+ * @param host - The configured bind host
+ * @param allowedHosts - The configured Host-header allow-list, or undefined when unset
+ * @returns true when the operator should be warned that DNS-rebinding protection is disabled
+ */
+export function shouldWarnUnprotectedBind(
+  host: string,
+  allowedHosts: string[] | undefined,
+): boolean {
+  return !LOOPBACK_HOSTS.has(host) && allowedHosts === undefined;
+}
+
 /** The per-request context needed to build a fresh MCP server + transport. */
 type HttpContext = { config: Config; client: MealieClient };
 
@@ -93,6 +112,9 @@ function respondMethodNotAllowed(_req: Request, res: Response): void {
  */
 export function buildHttpApp(config: Config, client: MealieClient): Express {
   const app = createMcpExpressApp(buildExpressOptions(config));
+  // createMcpExpressApp already registered express.json() (100kb default) and Host-header
+  // validation, so an unauthenticated body is parsed (bounded) before this 401 gate. Bearer
+  // auth is the primary control; this ordering is intentional and acceptable.
   app.use(createBearerAuthMiddleware(requireAuthToken(config)));
 
   const context: HttpContext = { config, client };

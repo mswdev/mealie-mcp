@@ -1,12 +1,12 @@
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { MealieClient } from "./client/MealieClient.js";
 import { loadConfig } from "./config.js";
-import { buildHttpApp } from "./http/app.js";
+import { buildHttpApp, shouldWarnUnprotectedBind } from "./http/app.js";
 import { logger } from "./logger.js";
 import { createServer } from "./server.js";
 
-/** Bind addresses that expose the server on all interfaces. */
-const ALL_INTERFACES_HOSTS = new Set(["0.0.0.0", "::"]);
+/** Exit code used when the HTTP server fails to bind its port. */
+const BIND_FAILURE_EXIT_CODE = 1;
 
 const config = loadConfig();
 const client = new MealieClient(config.MEALIE_URL, config.MEALIE_API_TOKEN);
@@ -34,18 +34,23 @@ async function startStdio(): Promise<void> {
 
 /**
  * Starts the MCP server over HTTP using a stateless StreamableHTTP transport, bound to the
- * configured host. Bearer auth is enforced by buildHttpApp; warns if binding to all
- * interfaces without a Host allow-list (DNS-rebinding protection then relies on auth alone).
+ * configured host. Bearer auth is enforced by buildHttpApp; warns when binding a non-loopback
+ * host without a Host allow-list (DNS-rebinding protection then relies on auth alone). The SDK
+ * also emits its own console warning for the 0.0.0.0/:: wildcard subset of this case.
  */
 function startHttp(): void {
   const app = buildHttpApp(config, client);
-  app.listen(config.PORT, config.HOST, () => {
+  const httpServer = app.listen(config.PORT, config.HOST, () => {
     logger.info({ port: config.PORT, host: config.HOST }, "mealie-mcp running on HTTP");
   });
-  if (ALL_INTERFACES_HOSTS.has(config.HOST) && config.MEALIE_HTTP_ALLOWED_HOSTS === undefined) {
+  httpServer.on("error", (err) => {
+    logger.error({ err, port: config.PORT, host: config.HOST }, "failed to bind HTTP server");
+    process.exit(BIND_FAILURE_EXIT_CODE);
+  });
+  if (shouldWarnUnprotectedBind(config.HOST, config.MEALIE_HTTP_ALLOWED_HOSTS)) {
     logger.warn(
       { host: config.HOST },
-      "Binding to all interfaces without MEALIE_HTTP_ALLOWED_HOSTS; Host-header DNS-rebinding protection is disabled (bearer auth still enforced)",
+      "Binding to a non-loopback host without MEALIE_HTTP_ALLOWED_HOSTS; Host-header DNS-rebinding protection is disabled (bearer auth still enforced)",
     );
   }
 }
