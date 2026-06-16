@@ -12,18 +12,18 @@ Most checks re-fetch and assert the named owed behavior; the success-mapping che
 | ✅ | C-SMOKE-TOOLS | #7-#11 | all six toolsets expose 121 tools | listTools returned 121 tools |
 | ✅ | C-SMOKE-SEARCH | #2 | recipe_search reaches the live API authed | total=0, items=0 |
 | ✅ | C-RECIPE-RW | #2 | recipe_get concise/detailed/include projection | search hit; concise trimmed; detailed full; include added nutrition |
-| ✅ | C-RECIPE-CREATE | #3 | recipe_create re-fetches bare slug into full object | created object id=254cbf22-1294-409f-b877-bfcf68b75952 slug=verifycreaterecipe; re-fetch matched |
+| ✅ | C-RECIPE-CREATE | #3 | recipe_create re-fetches bare slug into full object | created object id=afcc0898-e2bc-49d0-b060-c1f7896637ff slug=verifycreaterecipe; re-fetch matched |
 | ✅ | C-RECIPE-UPDATE | #3 | recipe_update fetch-merge preserves recipeYield across rename | recipeYield survived rename; slug regenerated verifyupdrecipe -> verifyupdrenamed (no 422) |
 | ✅ | C-RECIPE-DELETE | #3 | recipe_delete confirm gate + {deleted:slug} + gone | confirm gate held; deleted verifydelrecipe; re-fetch 404'd |
-| ✅ | C-RECIPE-IMAGE | #3 | recipe_image multipart upload attaches image | image attached: 188 |
+| ✅ | C-RECIPE-IMAGE | #3 | recipe_image multipart upload attaches image | image attached: 238 |
 | ✅ | C-RECIPE-ASSET | #3 | recipe_assets multipart upload retrievable via recipe_media (round-trip) | multipart asset uploaded and retrieved 200 via recipe_media: verifynote.txt |
 | ✅ | C-RECIPE-ZIP | #3 | recipe export -> zip download (REST bridge) -> delete -> recipe_import zip restores it | export -> token-bridge download -> delete -> zip import restored verifyzipsource |
 | ✅ | C-RECIPE-IMPORT | #3 | recipe_import html_or_json (hermetic) creates a recipe | imported recipe slug=verifyimportrecipe |
 | ✅ | C-FOOD-MERGE | #5 | food_update preserves aliases across rename | seeded aliases survived rename: [{"name":"scallion-ish"}] |
-| ✅ | C-FOOD-DELETE | #5 | food_delete confirm gate + {deleted:id} + gone | confirm gate held; deleted 0172cc13-53a9-43c9-880e-6bb91aff56a7; re-fetch 404'd |
+| ✅ | C-FOOD-DELETE | #5 | food_delete confirm gate + {deleted:id} + gone | confirm gate held; deleted 98fdb903-bb36-417b-bad7-94fa798b5b2f; re-fetch 404'd |
 | ✅ | C-ORG-MERGE | #5 | organizer_update full-replace PUT accepted (rename) | rename applied; full-replace PUT accepted (householdsWithTool not Mealie-settable — see report note) |
 | ✅ | C-ORG-EMPTY | #5 | organizer_search empty_only un-enveloped + tool guard | empty_only un-enveloped (count=1); tool guard fired |
-| ✅ | C-UNIT-MERGE | #5 | unit_update preserves fraction; unit_merge removes source | fraction survived rename; merge removed source 88f2711d-556b-4835-baa2-55781f4eb92f |
+| ✅ | C-UNIT-MERGE | #5 | unit_update preserves fraction; unit_merge removes source | fraction survived rename; merge removed source ce9e1c48-a0cc-45a9-959f-b25b04803f95 |
 | ✅ | C-MEALPLAN | #4 | mealplan_update preserves text across rename (integer id) | integer id=1; text survived rename |
 | ✅ | C-SHOPLIST-UPDATE | #4 | shopping_list_update round-trips listItems (no 422) + rename | rename applied; 1 item survived the Output->Input PUT |
 | ✅ | C-SHOPITEM | #4 | shopping_item create/update fetch-merge preserves note+quantity | single+bulk created; note/quantity survived; checked applied |
@@ -37,7 +37,7 @@ Most checks re-fetch and assert the named owed behavior; the success-mapping che
 | ✅ | C-LABEL | #8 | label_write preserves color across rename | color survived rename; detailed has all 4 fields |
 | ✅ | C-AIPROVIDER | #8 | AI provider apiKey never echoed + settings fetch-merge | apiKey never echoed (create+update); seeded audioProviderId survived a defaultProviderId-only update |
 | ✅ | C-SEED | #8 | group_seed maps SuccessResponse to a non-error result | seed labels mapped error:false -> success: {"seeded":"labels","message":"Seeding Successful"} |
-| ✅ | C-MIGRATION | #8 | group_start_migration confirm gate + multipart archive | confirm gate held; multipart archive uploaded; reportId=d29d123a-68b9-4e7f-ade6-186184fa5b0b |
+| ✅ | C-MIGRATION | #8 | group_start_migration confirm gate + multipart archive | confirm gate held; multipart archive uploaded; reportId=7975b73d-e536-4748-a529-1bb3881b6dd4 |
 | ✅ | C-REPORT | #8 | group_report list {items,count} + confirm-gated synth delete | list un-enveloped (count=1); confirm gate; synth {deleted}; gone |
 | ✅ | C-USER-ME | #9 | user_me concise enumerates tokens (no raw value) | tokens enumerated (1); no raw values |
 | ✅ | C-USER-UPDATE | #9 | user_self_update preserves untouched whitelist fields | fullName changed; username/email survived |
@@ -45,7 +45,7 @@ Most checks re-fetch and assert the named owed behavior; the success-mapping che
 | ✅ | C-USER-RATINGS | #9 | user_ratings_write favorite round-trips into user_me | favorite by slug round-tripped to favorites by recipeId |
 | ✅ | C-USER-PW | #9 | user_password_write error leaks no secret (secretSafeErrorResult) | error surfaced status-only; no secret leak |
 | ✅ | C-USER-REG | #9 | user_register (public) creates an account via invite token | account created via invite token; password not echoed |
-| ✅ | C-AVATAR | #9 | user_avatar_upload multipart (profile field) | avatar multipart accepted: {"uploaded":true,"userId":"0732872c-05b6-4cd5-b811-ea2036acd73b"} |
+| ✅ | C-AVATAR | #9 | user_avatar_upload multipart (profile field) | avatar multipart accepted: {"uploaded":true,"userId":"c990d5bf-999b-496a-8f73-3394d6407a9e"} |
 | ✅ | C-EXPLORE-LIST | #11 | explore_list food branch {id,name,labelId} + explore_get by id | food branch projected {id,name,labelId}; explore_get by id returned the food |
 | ✅ | C-EXPLORE-RECIPE | #11 | explore recipe search/get/suggestions on the public surface | public search hit; concise/detailed/include correct; suggestions returned items |
 | ✅ | C-EXPLORE-HH-GUARD | #11 | explore_list household+search guard (search-specific) | household+search rejected; household (no search) allowed |
@@ -55,7 +55,7 @@ Most checks re-fetch and assert the named owed behavior; the success-mapping che
 | ✅ | C-ADMIN-ACTIONS | #10 | admin reset-token shown-once + validation guard + unlock | reset token shown-once; missing-email guarded; unlock returned a count |
 | ✅ | C-ADMIN-AIKEY | #10 | admin AI provider apiKey never echoed | apiKey absent from create/update/read; re-supply accepted |
 | ✅ | C-BACKUP-RESTORE | #10 | backup create->delete-marker->restore brings the marker back (double gate) | double gate held; restore brought the deleted marker back (state moved) |
-| ✅ | C-BACKUP-DELETE | #10 | admin_backup_write delete confirm gate + gone | confirm gate held; backup mealie_2026.06.15.23.58.38.zip deleted and gone |
+| ✅ | C-BACKUP-DELETE | #10 | admin_backup_write delete confirm gate + gone | confirm gate held; backup mealie_2026.06.16.00.05.15.zip deleted and gone |
 | ✅ | C-MAINT-CLEAN | #10 | admin_maintenance_clean confirm gate + SuccessResponse mapping | confirm gate held; SuccessResponse error:false -> {cleaned:temp} |
 | ✅ | C-EMAIL-TEST | #10 | admin_email_test no-SMTP maps success:false -> isError | no-SMTP success:false correctly mapped to isError |
 | ✅ | C-DEBUG-OPENAI | #10 | admin_debug_openai bogus provider -> clean isError | bogus provider -> clean isError (no crash) |
@@ -82,6 +82,10 @@ Most checks re-fetch and assert the named owed behavior; the success-mapping che
 - Mealie normalizes a webhook `scheduledTime` from `HH:MM` to `HH:MM:SS`.
 - A backup restore can momentarily restart the instance; the harness waits for `/api/app/about` to return before continuing.
 - A recipe zip import (`/api/recipes/create/zip`) returns **500** when the recipe's slug already exists (it does not suffix/409); the round-trip deletes the original first.
+
+**Deferred (named in the task, not exercised live):**
+
+- `admin_backup_write(action:"upload")` — uploading a backup archive. It needs a valid Mealie backup zip on disk (obtainable only via a create -> download-token bridge, and re-uploading risks the same slug-conflict quirk as zip import). The underlying `postMultipart` mechanism is already proven five ways (recipe image/asset/zip, avatar, group migration), so this is low-value; the safe `action:"create"` and `action:"delete"` paths ARE covered (C-BACKUP-RESTORE/DELETE).
 
 ## Teardown
 
