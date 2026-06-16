@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseReadOnly, parseToolsets } from "./config.js";
+import { parseAllowedHosts, parseReadOnly, parseToolsets } from "./config.js";
 
 describe("parseReadOnly", () => {
   it.each([
@@ -72,5 +72,37 @@ describe("parseToolsets", () => {
     expect(parseToolsets("households,automation,groups,users,admin,explore")).toEqual(
       new Set(["households", "automation", "groups", "users", "admin", "explore"]),
     );
+  });
+});
+
+describe("parseAllowedHosts", () => {
+  it("returns undefined when unset or effectively empty", () => {
+    expect(parseAllowedHosts(undefined)).toBeUndefined();
+    expect(parseAllowedHosts("")).toBeUndefined();
+    expect(parseAllowedHosts("  ,  ")).toBeUndefined();
+  });
+
+  it("merges configured hosts with the localhost trio (deduped, lowercased, trimmed)", () => {
+    const hosts = parseAllowedHosts(" Mealie.Example.com , api.local ");
+
+    expect(hosts).toEqual(
+      expect.arrayContaining([
+        "mealie.example.com",
+        "api.local",
+        "localhost",
+        "127.0.0.1",
+        "[::1]",
+      ]),
+    );
+    expect(hosts).toHaveLength(5);
+  });
+
+  it("does not duplicate a localhost entry the user already supplied", () => {
+    const hosts = parseAllowedHosts("localhost,mealie.example.com");
+
+    expect(hosts).toEqual(
+      expect.arrayContaining(["localhost", "127.0.0.1", "[::1]", "mealie.example.com"]),
+    );
+    expect(hosts).toHaveLength(4);
   });
 });

@@ -24,6 +24,32 @@ export function parseReadOnly(value: string | undefined): boolean {
   return TRUTHY_ENV_VALUES.includes(normalized as (typeof TRUTHY_ENV_VALUES)[number]);
 }
 
+/** Loopback hostnames always permitted so local health checks survive an allow-list. */
+const LOCALHOST_HOSTNAMES = ["localhost", "127.0.0.1", "[::1]"] as const;
+
+/**
+ * Parses MEALIE_HTTP_ALLOWED_HOSTS into the Host-header allow-list for DNS-rebinding
+ * protection. The value is a comma-separated list; tokens are trimmed, lower-cased, and
+ * de-duplicated, then merged with the loopback trio so localhost access always works.
+ *
+ * Returns `undefined` (never `[]`) when no hosts are configured: createMcpExpressApp treats
+ * any array as "validate against this list", so an empty array would reject every request.
+ *
+ * @param value - Raw env value (or undefined when unset)
+ * @returns The merged allow-list, or undefined when nothing is configured
+ */
+export function parseAllowedHosts(value: string | undefined): string[] | undefined {
+  if (value === undefined) return undefined;
+  const hosts = new Set<string>();
+  for (const raw of value.split(",")) {
+    const token = raw.trim().toLowerCase();
+    if (token !== "") hosts.add(token);
+  }
+  if (hosts.size === 0) return undefined;
+  for (const localhost of LOCALHOST_HOSTNAMES) hosts.add(localhost);
+  return [...hosts];
+}
+
 /** Opt-in toolset tokens recognized in MEALIE_TOOLSETS. Extend per opt-in PR (#8-#11). */
 export const KNOWN_TOOLSETS = [
   "households",
