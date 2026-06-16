@@ -4,7 +4,9 @@ import type { AddressInfo } from "node:net";
 import { afterEach, describe, expect, it } from "vitest";
 import type { MealieClient } from "../client/MealieClient.js";
 import type { Config } from "../config.js";
+import { parseAllowedHosts } from "../config.js";
 import { buildHttpApp, shouldWarnUnprotectedBind } from "./app.js";
+import { JSON_RPC_SERVER_ERROR } from "./json-rpc.js";
 
 const TOKEN = "e2e-secret";
 
@@ -57,17 +59,24 @@ const JSON_HEADERS = {
   Accept: "application/json, text/event-stream",
 };
 
-function post(port: number, headers: Record<string, string>, body: string): Promise<number> {
+function send(
+  method: string,
+  port: number,
+  headers: Record<string, string>,
+  body?: string,
+): Promise<{ status: number; body: string }> {
   return new Promise((resolve, reject) => {
-    const req = httpRequest(
-      { host: "127.0.0.1", port, path: "/mcp", method: "POST", headers },
-      (res) => {
-        res.resume();
-        res.on("end", () => resolve(res.statusCode ?? 0));
-      },
-    );
+    const req = httpRequest({ host: "127.0.0.1", port, path: "/mcp", method, headers }, (res) => {
+      let data = "";
+      res.setEncoding("utf8");
+      res.on("data", (chunk) => {
+        data += chunk;
+      });
+      res.on("end", () => resolve({ status: res.statusCode ?? 0, body: data }));
+    });
     req.on("error", reject);
-    req.end(body);
+    if (body !== undefined) req.write(body);
+    req.end();
   });
 }
 
@@ -99,7 +108,7 @@ describe("buildHttpApp auth gate", () => {
   it("rejects a POST with no Authorization header (401)", async () => {
     const port = await start(buildConfig());
 
-    const status = await post(port, JSON_HEADERS, INITIALIZE_BODY);
+    const { status } = await send("POST", port, JSON_HEADERS, INITIALIZE_BODY);
 
     expect(status).toBe(401);
   });
@@ -107,7 +116,8 @@ describe("buildHttpApp auth gate", () => {
   it("rejects a POST with a wrong token (401)", async () => {
     const port = await start(buildConfig());
 
-    const status = await post(
+    const { status } = await send(
+      "POST",
       port,
       { ...JSON_HEADERS, Authorization: "Bearer wrong" },
       INITIALIZE_BODY,
@@ -116,17 +126,19 @@ describe("buildHttpApp auth gate", () => {
     expect(status).toBe(401);
   });
 
-  it("admits a POST with the correct token (not 401/403)", async () => {
+  it("admits a POST with the correct token and returns an initialize result (200)", async () => {
     const port = await start(buildConfig());
 
-    const status = await post(
+    const { status, body } = await send(
+      "POST",
       port,
       { ...JSON_HEADERS, Authorization: `Bearer ${TOKEN}` },
       INITIALIZE_BODY,
     );
 
-    expect(status).not.toBe(401);
-    expect(status).not.toBe(403);
+    expect(status).toBe(200);
+    expect(body).toContain('"result"');
+    expect(body).not.toContain('"error"');
   });
 });
 
@@ -134,7 +146,8 @@ describe("buildHttpApp host validation", () => {
   it("rejects a foreign Host header on a localhost bind (403)", async () => {
     const port = await start(buildConfig());
 
-    const status = await post(
+    const { status } = await send(
+      "POST",
       port,
       { ...JSON_HEADERS, Host: "evil.example.com", Authorization: `Bearer ${TOKEN}` },
       INITIALIZE_BODY,
@@ -142,4 +155,57 @@ describe("buildHttpApp host validation", () => {
 
     expect(status).toBe(403);
   });
+
+  it("admits a configured Host on a non-loopback bind with an allow-list (200)", async () => {
+    const config = buildConfig({
+      HOST: "0.0.0.0",
+      MEALIE_HTTP_ALLOWED_HOSTS: parseAllowedHosts("mealie.example.com"),
+    });
+    const port = await start(config);
+
+    const { status } = await send(
+      "POST",
+      port,
+      { ...JSON_HEADERS, Host: "mealie.example.com", Authorization: `Bearer ${TOKEN}` },
+      INITIALIZE_BODY,
+    );
+
+    expect(status).toBe(200);
+  });
+
+  it("rejects an off-list Host on a non-loopback bind with an allow-list (403)", async () => {
+    const config = buildConfig({
+      HOST: "0.0.0.0",
+      MEALIE_HTTP_ALLOWED_HOSTS: parseAllowedHosts("mealie.example.com"),
+    });
+    const port = await start(config);
+
+    const { status } = await send(
+      "POST",
+      port,
+      { ...JSON_HEADERS, Host: "evil.example.com", Authorization: `Bearer ${TOKEN}` },
+      INITIALIZE_BODY,
+    );
+
+    expect(status).toBe(403);
+  });
+});
+
+describe("buildHttpApp method handling", () => {
+  it.each(["GET", "DELETE"])(
+    "rejects %s /mcp with a 405 JSON-RPC error for an authenticated request",
+    async (method) => {
+      const port = await start(buildConfig());
+
+      const { status, body } = await send(method, port, {
+        ...JSON_HEADERS,
+        Authorization: `Bearer ${TOKEN}`,
+      });
+
+      expect(status).toBe(405);
+      const parsed = JSON.parse(body);
+      expect(parsed.error.code).toBe(JSON_RPC_SERVER_ERROR);
+      expect(parsed.id).toBeNull();
+    },
+  );
 });
