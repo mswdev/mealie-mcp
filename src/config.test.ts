@@ -105,6 +105,20 @@ describe("parseAllowedHosts", () => {
     );
     expect(hosts).toHaveLength(4);
   });
+
+  it("strips ports so entries match the SDK's port-agnostic Host comparison", () => {
+    const hosts = parseAllowedHosts("mealie.example.com:3000");
+
+    expect(hosts).toContain("mealie.example.com");
+    expect(hosts).not.toContain("mealie.example.com:3000");
+  });
+
+  it("drops unparseable entries without throwing", () => {
+    const hosts = parseAllowedHosts("good.example.com, bad host");
+
+    expect(hosts).toContain("good.example.com");
+    expect(hosts).not.toContain("bad host");
+  });
 });
 
 const BASE_ENV = {

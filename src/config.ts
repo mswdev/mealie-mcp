@@ -30,9 +30,29 @@ export function parseReadOnly(value: string | undefined): boolean {
 const LOCALHOST_HOSTNAMES = ["localhost", "127.0.0.1", "[::1]"] as const;
 
 /**
+ * Normalizes one allow-list token to the bare, lower-cased hostname the SDK derives from a
+ * Host header (`new URL("http://" + host).hostname`), which strips any port. Matching the
+ * SDK's own parsing keeps the stored value comparable: a port-bearing entry like
+ * "example.com:3000" would otherwise never match the port-less hostname and silently 403.
+ *
+ * @param token - A single trimmed allow-list entry
+ * @returns The bare hostname, or null when the entry is empty or not a valid host
+ */
+function normalizeHostname(token: string): string | null {
+  if (token === "") return null;
+  try {
+    return new URL(`http://${token}`).hostname;
+  } catch {
+    logger.warn({ token }, "Ignoring invalid MEALIE_HTTP_ALLOWED_HOSTS entry");
+    return null;
+  }
+}
+
+/**
  * Parses MEALIE_HTTP_ALLOWED_HOSTS into the Host-header allow-list for DNS-rebinding
- * protection. The value is a comma-separated list; tokens are trimmed, lower-cased, and
- * de-duplicated, then merged with the loopback trio so localhost access always works.
+ * protection. The value is a comma-separated list; entries are normalized to bare lower-cased
+ * hostnames (ports stripped, like the SDK), de-duplicated, then merged with the loopback trio
+ * so localhost access always works.
  *
  * Returns `undefined` (never `[]`) when no hosts are configured: createMcpExpressApp treats
  * any array as "validate against this list", so an empty array would reject every request.
@@ -44,8 +64,8 @@ export function parseAllowedHosts(value: string | undefined): string[] | undefin
   if (value === undefined) return undefined;
   const hosts = new Set<string>();
   for (const raw of value.split(",")) {
-    const token = raw.trim().toLowerCase();
-    if (token !== "") hosts.add(token);
+    const hostname = normalizeHostname(raw.trim());
+    if (hostname !== null) hosts.add(hostname);
   }
   if (hosts.size === 0) return undefined;
   for (const localhost of LOCALHOST_HOSTNAMES) hosts.add(localhost);
@@ -134,7 +154,7 @@ const configSchema = baseConfigSchema.superRefine((config, ctx) => {
 export type Config = z.infer<typeof configSchema>;
 
 /**
- * Validates environment variables against the config schema without side effects.
+ * Validates environment variables against the config schema without exiting the process.
  * Use this for testing; loadConfig wraps it with process-exit-on-failure.
  *
  * @param env - The environment record to validate (typically process.env)
