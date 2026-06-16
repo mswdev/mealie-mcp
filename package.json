@@ -1,0 +1,54 @@
+{
+  "name": "mealie-mcp",
+  "version": "0.1.0",
+  "description": "A full-featured MCP server for the Mealie recipe manager — full REST API coverage (259 endpoints), stdio + HTTP transports.",
+  "type": "module",
+  "bin": {
+    "mealie-mcp": "./dist/index.js"
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch --onSuccess \"node dist/index.js\"",
+    "start": "node dist/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "biome check .",
+    "format": "biome format --write .",
+    "typecheck": "tsc --noEmit",
+    "generate": "tsx scripts/generate-types.ts",
+    "verify:live": "tsx scripts/verify-live/index.ts",
+    "prepare": "npm run build",
+    "prepublishOnly": "npm run build && npm run typecheck && npm run test && npm run lint"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": ["mealie", "mcp", "model-context-protocol", "recipe-manager", "meal-planning"],
+  "author": "Matt White <matt@msw.dev>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mswdev/mealie-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mswdev/mealie-mcp/issues"
+  },
+  "homepage": "https://github.com/mswdev/mealie-mcp#readme",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "pino": "^9.0.0",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.0",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.0.0",
+    "openapi-typescript": "^7.0.0",
+    "pino-pretty": "^13.0.0",
+    "tsup": "^8.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^3.0.0"
+  }
+}
