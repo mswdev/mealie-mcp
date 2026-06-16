@@ -54,7 +54,7 @@ const FINDINGS = [
   "",
   "**Deferred (named in the task, not exercised live):**",
   "",
-  "- `admin_backup_write(action:\"upload\")` — uploading a backup archive. It needs a valid Mealie backup zip on disk (obtainable only via a create -> download-token bridge, and re-uploading risks the same slug-conflict quirk as zip import). The underlying `postMultipart` mechanism is already proven five ways (recipe image/asset/zip, avatar, group migration), so this is low-value; the safe `action:\"create\"` and `action:\"delete\"` paths ARE covered (C-BACKUP-RESTORE/DELETE).",
+  '- `admin_backup_write(action:"upload")` — uploading a backup archive. It needs a valid Mealie backup zip on disk (obtainable only via a create -> download-token bridge, and re-uploading risks the same slug-conflict quirk as zip import). The underlying `postMultipart` mechanism is already proven five ways (recipe image/asset/zip, avatar, group migration), so this is low-value; the safe `action:"create"` and `action:"delete"` paths ARE covered (C-BACKUP-RESTORE/DELETE).',
   "",
 ];
 

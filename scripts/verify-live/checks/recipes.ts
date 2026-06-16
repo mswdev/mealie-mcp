@@ -96,12 +96,22 @@ async function updateMerge(ctx: CheckContext): Promise<void> {
     async () => {
       const created = await ctx.mcp.call("recipe_create", { name: "VerifyUpdRecipe" });
       const slug = (created.json as { slug: string }).slug;
-      await ctx.mcp.call("recipe_update", { slug, changes: { recipeYield: "4 servings" } });
+      // seed via PUT (exercises the put path live); rename via the default patch
+      await ctx.mcp.call("recipe_update", {
+        slug,
+        changes: { recipeYield: "4 servings" },
+        method: "put",
+      });
       const rename = await ctx.mcp.call("recipe_update", {
         slug,
         changes: { name: "VerifyUpdRenamed" },
       });
       expect(!rename.isError, `rename failed (422?): ${rename.text}`);
+      // the WRITE RESPONSE itself must carry the preserved field — that is the fixed code path's output
+      expect(
+        (rename.json as { recipeYield?: string }).recipeYield === "4 servings",
+        `write response dropped recipeYield: ${snippet(rename.json)}`,
+      );
       // renaming regenerates the slug server-side — re-fetch by the slug the write returned
       const newSlug = (rename.json as { slug: string }).slug;
       const after = await ctx.mcp.call("recipe_get", {
@@ -112,7 +122,7 @@ async function updateMerge(ctx: CheckContext): Promise<void> {
         (after.json as { recipeYield?: string }).recipeYield === "4 servings",
         `recipeYield reset on rename: ${snippet(after.json)}`,
       );
-      return `recipeYield survived rename; slug regenerated ${slug} -> ${newSlug} (no 422)`;
+      return `recipeYield survived rename (write-response + re-fetch); put+patch both live; slug ${slug} -> ${newSlug}`;
     },
   );
 }

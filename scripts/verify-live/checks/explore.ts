@@ -54,7 +54,7 @@ async function list(ctx: CheckContext): Promise<void> {
         got.id === foodId && got.labelId === labelId,
         `explore_get food mismatch: ${snippet(one.json)}`,
       );
-      return `food branch projected {id,name,labelId}; explore_get by id returned the food`;
+      return "food branch projected {id,name,labelId}; explore_get by id returned the food";
     },
   );
 }
