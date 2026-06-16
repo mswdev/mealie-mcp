@@ -26,7 +26,7 @@ Set these environment variables before running:
 | `PORT` | No | HTTP port when using `TRANSPORT=http` (default: `3000`) |
 | `HOST` | No | HTTP bind address (default `127.0.0.1`, loopback-only). Set to `0.0.0.0` to expose on all interfaces. |
 | `MEALIE_HTTP_AUTH_TOKEN` | http only | Shared bearer token; **required** when `TRANSPORT=http` (the server refuses to start without it). Clients must send `Authorization: Bearer <token>`. |
-| `MEALIE_HTTP_ALLOWED_HOSTS` | No | Comma-separated `Host`-header allow-list for DNS-rebinding protection when binding to a non-loopback host. Localhost is always allowed. |
+| `MEALIE_HTTP_ALLOWED_HOSTS` | No | Comma-separated `Host`-header allow-list (hostnames only — ports are ignored) for DNS-rebinding protection. When set, only these hosts (plus localhost) are accepted on any bind. Localhost is always allowed. |
 | `MEALIE_READ_ONLY` | No | When `true`/`1`/`yes`/`on`, every mutating tool (create, update, delete, import, bulk actions, etc.) is **not registered** — the server exposes reads only. Default: `false`. |
 | `MEALIE_TOOLSETS` | No | Comma-separated list of **opt-in** toolsets to enable, e.g. `households,automation,groups,users,admin,explore`. Recognized tokens: `households`, `automation`, `groups`, `users`, `admin`, `explore`. Unset → only the default tools. Unknown tokens are logged to stderr and ignored. Composes with `MEALIE_READ_ONLY` (enabled toolsets still have their writes stripped in read-only mode; `explore` is all reads and survives intact). |
 
@@ -239,7 +239,7 @@ Then point the connector at `http://<your-host>:3000/mcp` — the server serves 
 > **🔒 Security (HTTP mode):** HTTP mode is **secure by default**:
 > - **Binds to `127.0.0.1`** (loopback only). Set `HOST=0.0.0.0` to expose it deliberately.
 > - **Requires bearer auth** — the server refuses to start in HTTP mode unless `MEALIE_HTTP_AUTH_TOKEN` is set. Every request must send `Authorization: Bearer <token>`; tokens are compared in constant time and never logged.
-> - **DNS-rebinding protection** — on a loopback bind, only `localhost`/`127.0.0.1`/`[::1]` `Host` headers are accepted. When binding to `0.0.0.0`, set `MEALIE_HTTP_ALLOWED_HOSTS` to your public hostname(s) to keep `Host`-header validation on (localhost stays allowed).
+> - **DNS-rebinding protection** — on a loopback bind with no `MEALIE_HTTP_ALLOWED_HOSTS` set, only `localhost`/`127.0.0.1`/`[::1]` `Host` headers are accepted. Setting `MEALIE_HTTP_ALLOWED_HOSTS` replaces that with your configured hosts plus localhost, on any bind. When binding to a non-loopback host (e.g. `0.0.0.0`), set it to your public hostname(s) to keep `Host`-header validation on (otherwise validation is off for that bind and the server warns).
 >
 > Bearer auth is the primary control; `Host`-header validation is defense-in-depth. **`Origin` headers are not validated** — front internet-facing deployments with HTTPS / a reverse proxy. For local single-user setups, prefer the default `stdio` transport.
 
