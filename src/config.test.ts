@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseAllowedHosts, parseReadOnly, parseToolsets } from "./config.js";
+import { parseAllowedHosts, parseConfig, parseReadOnly, parseToolsets } from "./config.js";
 
 describe("parseReadOnly", () => {
   it.each([
@@ -104,5 +104,59 @@ describe("parseAllowedHosts", () => {
       expect.arrayContaining(["localhost", "127.0.0.1", "[::1]", "mealie.example.com"]),
     );
     expect(hosts).toHaveLength(4);
+  });
+});
+
+const BASE_ENV = {
+  MEALIE_URL: "https://mealie.example.com",
+  MEALIE_API_TOKEN: "api-token",
+} as const;
+
+describe("parseConfig", () => {
+  it("defaults HOST to 127.0.0.1 and leaves auth token unset in stdio mode", () => {
+    const result = parseConfig({ ...BASE_ENV });
+
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+    expect(result.data.HOST).toBe("127.0.0.1");
+    expect(result.data.TRANSPORT).toBe("stdio");
+    expect(result.data.MEALIE_HTTP_AUTH_TOKEN).toBeUndefined();
+  });
+
+  it("rejects http mode without an auth token", () => {
+    const result = parseConfig({ ...BASE_ENV, TRANSPORT: "http" });
+
+    expect(result.success).toBe(false);
+    if (result.success) return;
+    const issue = result.error.issues.find((i) => i.path[0] === "MEALIE_HTTP_AUTH_TOKEN");
+    expect(issue?.message).toContain("required when TRANSPORT=http");
+  });
+
+  it("rejects http mode with a whitespace-only auth token", () => {
+    const result = parseConfig({
+      ...BASE_ENV,
+      TRANSPORT: "http",
+      MEALIE_HTTP_AUTH_TOKEN: "   ",
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it("accepts http mode with an auth token and parses the allow-list", () => {
+    const result = parseConfig({
+      ...BASE_ENV,
+      TRANSPORT: "http",
+      MEALIE_HTTP_AUTH_TOKEN: "secret",
+      MEALIE_HTTP_ALLOWED_HOSTS: "mealie.example.com",
+      HOST: "0.0.0.0",
+    });
+
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+    expect(result.data.HOST).toBe("0.0.0.0");
+    expect(result.data.MEALIE_HTTP_AUTH_TOKEN).toBe("secret");
+    expect(result.data.MEALIE_HTTP_ALLOWED_HOSTS).toEqual(
+      expect.arrayContaining(["mealie.example.com", "localhost", "127.0.0.1", "[::1]"]),
+    );
   });
 });

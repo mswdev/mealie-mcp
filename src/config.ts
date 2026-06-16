@@ -7,6 +7,8 @@ const MIN_PORT = 1;
 const MAX_PORT = 65535;
 /** Default HTTP port used when PORT is unset and TRANSPORT is "http". */
 const DEFAULT_PORT = 3000;
+/** Default HTTP bind host — loopback only, so HTTP mode is not exposed by default. */
+const DEFAULT_HOST = "127.0.0.1";
 
 /** Environment-string values that enable a boolean flag (everything else is false). */
 const TRUTHY_ENV_VALUES = ["true", "1", "yes", "on"] as const;
@@ -89,11 +91,12 @@ export function parseToolsets(value: string | undefined): Set<ToolsetName> {
   return enabled;
 }
 
-const configSchema = z.object({
+const baseConfigSchema = z.object({
   MEALIE_URL: z.string().url("MEALIE_URL must be a valid URL (e.g. https://mealie.example.com)"),
   MEALIE_API_TOKEN: z.string().min(1, "MEALIE_API_TOKEN is required"),
   TRANSPORT: z.enum(["stdio", "http"]).default("stdio"),
   PORT: z.coerce.number().int().min(MIN_PORT).max(MAX_PORT).default(DEFAULT_PORT),
+  HOST: z.string().min(1).default(DEFAULT_HOST),
   MEALIE_READ_ONLY: z
     .preprocess(
       (value) => parseReadOnly(typeof value === "string" ? value : undefined),
@@ -104,10 +107,42 @@ const configSchema = z.object({
     .string()
     .optional()
     .transform((value) => parseToolsets(value)),
+  MEALIE_HTTP_AUTH_TOKEN: z.string().optional(),
+  MEALIE_HTTP_ALLOWED_HOSTS: z
+    .string()
+    .optional()
+    .transform((value) => parseAllowedHosts(value)),
+});
+
+/**
+ * HTTP transport is unauthenticated unless a bearer token is set, so it is hard-required:
+ * the server refuses to start in http mode without MEALIE_HTTP_AUTH_TOKEN.
+ */
+const configSchema = baseConfigSchema.superRefine((config, ctx) => {
+  if (config.TRANSPORT !== "http") return;
+  if (config.MEALIE_HTTP_AUTH_TOKEN !== undefined && config.MEALIE_HTTP_AUTH_TOKEN.trim() !== "") {
+    return;
+  }
+  ctx.addIssue({
+    code: z.ZodIssueCode.custom,
+    path: ["MEALIE_HTTP_AUTH_TOKEN"],
+    message: "MEALIE_HTTP_AUTH_TOKEN is required when TRANSPORT=http",
+  });
 });
 
 /** Validated server configuration derived from environment variables. */
 export type Config = z.infer<typeof configSchema>;
+
+/**
+ * Validates environment variables against the config schema without side effects.
+ * Use this for testing; loadConfig wraps it with process-exit-on-failure.
+ *
+ * @param env - The environment record to validate (typically process.env)
+ * @returns A zod SafeParseReturnType with the validated Config on success
+ */
+export function parseConfig(env: NodeJS.ProcessEnv): ReturnType<typeof configSchema.safeParse> {
+  return configSchema.safeParse(env);
+}
 
 /**
  * Validates and returns the server configuration from environment variables.
@@ -116,7 +151,7 @@ export type Config = z.infer<typeof configSchema>;
  * @returns The validated Config object; the process exits before returning if validation fails
  */
 export function loadConfig(): Config {
-  const result = configSchema.safeParse(process.env);
+  const result = parseConfig(process.env);
 
   if (!result.success) {
     const errors = result.error.issues
